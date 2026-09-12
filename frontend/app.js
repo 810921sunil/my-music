@@ -1611,11 +1611,10 @@ async function bootstrapApp() {
                 setPlayerMetadata(data.songs[0]);
             }
 
-            // Initial view
-            showView('home');
-
-            // Check URL for Room Invite
-            checkUrlForRoomInvite();
+            // Initial view (keep room view if joining via invite or already connected)
+            if (!state.room.code && !window.location.search.includes('room=')) {
+                showView('home');
+            }
         }
     } catch (e) {
         console.error('Failed to bootstrap app data:', e);
@@ -1721,46 +1720,71 @@ if (createRoomBtn) {
     });
 }
 
-// 2. Join Room Action
-if (joinRoomBtn) {
-    joinRoomBtn.addEventListener('click', async () => {
-        const name = (joinRoomNameInput.value || 'Guest').trim();
-        const code = (joinRoomCodeInput.value || '').trim().toUpperCase();
+// Room Code Sanitizer & Parser
+function parseRoomCode(raw) {
+    if (!raw) return '';
+    let c = String(raw).trim();
+    if (c.includes('room=')) {
+        c = c.split('room=')[1].split('&')[0];
+    }
+    return c.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 6);
+}
 
-        if (!code || code.length < 4) {
-            showToast('Please enter a valid Room Code (e.g. M7K9X2).');
-            return;
-        }
+// Global Join Function (Used by button, URL invite, and Active Rooms list)
+window.joinRoomByCode = async function(rawCode, customName, isAuto = false) {
+    const code = parseRoomCode(rawCode || (joinRoomCodeInput ? joinRoomCodeInput.value : ''));
+    if (!code || code.length < 4) {
+        showToast('Please enter a valid 6-letter Room Code (e.g. M7K9X2).');
+        return false;
+    }
 
-        state.room.name = name;
-        localStorage.setItem('instasound_user_name', name);
+    const name = (customName || (joinRoomNameInput ? joinRoomNameInput.value : '') || state.room.name || 'Guest').trim();
+    state.room.name = name;
+    localStorage.setItem('instasound_user_name', name);
 
+    if (joinRoomBtn) {
         joinRoomBtn.disabled = true;
         joinRoomBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Joining...';
+    }
 
-        try {
-            const res = await fetch(`/api/room/${code}`);
-            const data = await res.json();
+    showToast(`Connecting to Room ${code}...`, 2000);
 
-            if (data.success && data.room) {
-                state.room.code = code;
-                state.room.isHost = (data.room.host_id === state.room.clientId);
-                state.room.hostId = data.room.host_id;
+    try {
+        const res = await fetch(`/api/room/${code}`);
+        const data = await res.json();
 
-                connectRoomWebSocket(code, state.room.clientId, name);
-                updateRoomUrl(code);
-                renderRoomView();
-                showToast(`🎧 Connected to Room ${code}!`);
-            } else {
-                showToast(data.detail || 'Room not found or expired.');
-            }
-        } catch (err) {
-            console.error('Join room error:', err);
-            showToast('Could not reach room.');
-        } finally {
+        if (data.success && data.room) {
+            state.room.code = code;
+            state.room.isHost = (data.room.host_id === state.room.clientId);
+            state.room.hostId = data.room.host_id;
+
+            connectRoomWebSocket(code, state.room.clientId, name);
+            updateRoomUrl(code);
+            showView('room');
+            renderRoomView();
+            showToast(`🎧 Connected to Room ${code}!`);
+            return true;
+        } else {
+            showToast(data.detail || 'Room not found or has expired. Please check code or ask Host.');
+            fetchActiveRooms();
+            return false;
+        }
+    } catch (err) {
+        console.error('Join room error:', err);
+        showToast('Server connection error. Please try again.');
+        return false;
+    } finally {
+        if (joinRoomBtn) {
             joinRoomBtn.disabled = false;
             joinRoomBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Join Room';
         }
+    }
+};
+
+// 2. Join Room Action
+if (joinRoomBtn) {
+    joinRoomBtn.addEventListener('click', () => {
+        window.joinRoomByCode();
     });
 }
 
@@ -1967,8 +1991,10 @@ function syncSongPlayback(song, position, isPlaying, serverTime) {
             state.isPlaying = true;
             updatePlayIcons();
             updateRoomVisualizer();
+            hideAudioUnlockOverlay();
         }).catch(err => {
-            console.warn('Sync audio play error:', err);
+            console.warn('Sync audio play error (Autoplay restricted):', err);
+            showAudioUnlockOverlay();
         }).finally(() => {
             state.room.isSyncing = false;
         });
@@ -1979,6 +2005,7 @@ function syncSongPlayback(song, position, isPlaying, serverTime) {
         updatePlayIcons();
         updateRoomVisualizer();
         state.room.isSyncing = false;
+        hideAudioUnlockOverlay();
     }
 }
 
@@ -1987,6 +2014,7 @@ function renderRoomView() {
     if (!state.room.code) {
         roomLobby.classList.remove('hidden');
         roomActive.classList.add('hidden');
+        fetchActiveRooms();
     } else {
         roomLobby.classList.add('hidden');
         roomActive.classList.remove('hidden');
@@ -2261,16 +2289,101 @@ function updateRoomUrl(roomCode) {
     window.history.replaceState({}, '', url.toString());
 }
 
+// Active Rooms Section Logic
+const activeRoomsGrid = document.getElementById('active-rooms-grid');
+const refreshActiveRoomsBtn = document.getElementById('refresh-active-rooms-btn');
+const audioUnlockOverlay = document.getElementById('audio-unlock-overlay');
+const audioUnlockBtn = document.getElementById('audio-unlock-btn');
+
+function showAudioUnlockOverlay() {
+    if (audioUnlockOverlay) audioUnlockOverlay.classList.remove('hidden');
+}
+
+function hideAudioUnlockOverlay() {
+    if (audioUnlockOverlay) audioUnlockOverlay.classList.add('hidden');
+}
+
+if (audioUnlockBtn) {
+    audioUnlockBtn.addEventListener('click', () => {
+        audio.play().then(() => {
+            state.isPlaying = true;
+            updatePlayIcons();
+            updateRoomVisualizer();
+            hideAudioUnlockOverlay();
+            showToast('🔊 Audio enabled & synced with Host!');
+        }).catch(err => {
+            console.error('Audio unlock tap failed:', err);
+        });
+    });
+}
+
+async function fetchActiveRooms() {
+    if (!activeRoomsGrid) return;
+    try {
+        const res = await fetch('/api/rooms/active');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.rooms)) {
+            if (data.rooms.length === 0) {
+                activeRoomsGrid.innerHTML = `
+                    <div class="no-rooms-notice">
+                        <i class="fa-solid fa-signal" style="margin-right: 6px; color: var(--text-secondary);"></i>
+                        Abhi koi doosra room open nahi hai. Pehle <strong>"+ Create New Room"</strong> dabayein ya Host se code poochein!
+                    </div>
+                `;
+            } else {
+                activeRoomsGrid.innerHTML = data.rooms.map(r => `
+                    <div class="active-room-card">
+                        <div class="active-room-card-head">
+                            <span class="active-room-code-badge">${escapeHtml(r.code)}</span>
+                            <span class="active-room-listeners-badge"><i class="fa-solid fa-users"></i> ${r.member_count} listener${r.member_count === 1 ? '' : 's'}</span>
+                        </div>
+                        <div class="active-room-host">👑 Host: ${escapeHtml(r.host_name)}</div>
+                        <div class="active-room-song">
+                            <i class="fa-solid fa-music"></i> ${r.current_song ? escapeHtml(r.current_song.title) : 'Standing by (No song yet)'}
+                        </div>
+                        <button class="quick-join-room-btn" onclick="joinRoomByCode('${escapeHtml(r.code)}')">
+                            <i class="fa-solid fa-right-to-bracket"></i> Join Room (${escapeHtml(r.code)})
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to load active rooms:', e);
+    }
+}
+
+if (refreshActiveRoomsBtn) {
+    refreshActiveRoomsBtn.addEventListener('click', () => {
+        fetchActiveRooms();
+        showToast('Refreshing live rooms...');
+    });
+}
+
+// Periodic refresh of active rooms every 12 seconds when on room lobby
+setInterval(() => {
+    if (state.currentView === 'room' && !state.room.code) {
+        fetchActiveRooms();
+    }
+}, 12000);
+
 function checkUrlForRoomInvite() {
     const urlParams = new URLSearchParams(window.location.search);
     const roomCode = urlParams.get('room');
     if (roomCode) {
-        const cleanCode = roomCode.trim().toUpperCase();
-        if (joinRoomCodeInput) joinRoomCodeInput.value = cleanCode;
-        showView('room');
-        showToast(`🔗 Invite detected for Room ${cleanCode}! Tap 'Join Room' to listen together.`, 4000);
+        const cleanCode = parseRoomCode(roomCode);
+        if (cleanCode && cleanCode.length >= 4) {
+            if (joinRoomCodeInput) joinRoomCodeInput.value = cleanCode;
+            showView('room');
+            showToast(`🔗 Invite link detected for Room ${cleanCode}! Auto-connecting...`, 3000);
+            window.joinRoomByCode(cleanCode, state.room.name, true);
+        }
     }
 }
+
+// Check room invite immediately upon load!
+checkUrlForRoomInvite();
+fetchActiveRooms();
 
 // Start Application
 bootstrapApp();

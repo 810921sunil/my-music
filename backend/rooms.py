@@ -120,9 +120,73 @@ class Room:
             new_host_id = self.host_id
         return new_host_id
 
+import os
+import json
+
+ROOM_STORAGE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "active_rooms.json")
+
 class RoomManager:
     def __init__(self):
         self.rooms: Dict[str, Room] = {}
+        self.load_from_disk()
+
+    def _normalize_code(self, code: str) -> str:
+        if not code:
+            return ""
+        c = code.strip()
+        if "room=" in c:
+            c = c.split("room=")[1].split("&")[0]
+        # Keep only alphanumeric
+        return "".join(ch for ch in c if ch.isalnum()).upper()[:6]
+
+    def save_to_disk(self):
+        try:
+            data = {}
+            now = time.time()
+            for code, room in self.rooms.items():
+                # Save rooms created within last 24 hours
+                if now - room.created_at < 86400:
+                    data[code] = {
+                        "code": room.code,
+                        "host_id": room.host_id,
+                        "host_name": room.host_name,
+                        "created_at": room.created_at,
+                        "current_song": room.current_song,
+                        "is_playing": room.is_playing,
+                        "position": room.position,
+                        "last_updated": room.last_updated,
+                        "queue": room.queue,
+                        "members": room.members
+                    }
+            with open(ROOM_STORAGE_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+        except Exception as e:
+            print("[RoomManager] Error saving to disk:", e)
+
+    def load_from_disk(self):
+        if not os.path.exists(ROOM_STORAGE_FILE):
+            return
+        try:
+            with open(ROOM_STORAGE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            now = time.time()
+            for code, rdata in data.items():
+                if now - rdata.get("created_at", 0) < 86400:
+                    room = Room(
+                        code=rdata["code"],
+                        host_id=rdata["host_id"],
+                        host_name=rdata["host_name"],
+                        initial_song=rdata.get("current_song")
+                    )
+                    room.created_at = rdata.get("created_at", room.created_at)
+                    room.is_playing = rdata.get("is_playing", False)
+                    room.position = rdata.get("position", 0.0)
+                    room.queue = rdata.get("queue", [])
+                    room.members = rdata.get("members", room.members)
+                    self.rooms[room.code] = room
+            print(f"[RoomManager] Restored {len(self.rooms)} rooms from disk.")
+        except Exception as e:
+            print("[RoomManager] Error loading from disk:", e)
 
     def create_room(self, host_id: str, host_name: str, initial_song: Optional[Dict[str, Any]] = None) -> Room:
         code = generate_room_code()
@@ -131,20 +195,43 @@ class RoomManager:
         
         room = Room(code=code, host_id=host_id, host_name=host_name, initial_song=initial_song)
         self.rooms[code] = room
+        self.save_to_disk()
         return room
 
     def get_room(self, code: str) -> Optional[Room]:
-        if not code:
+        norm = self._normalize_code(code)
+        if not norm:
             return None
-        return self.rooms.get(code.strip().upper())
+        return self.rooms.get(norm)
 
     def remove_room(self, code: str):
-        c = code.strip().upper()
-        if c in self.rooms:
-            del self.rooms[c]
+        norm = self._normalize_code(code)
+        if norm in self.rooms:
+            del self.rooms[norm]
+            self.save_to_disk()
+
+    def get_active_rooms(self) -> List[Dict[str, Any]]:
+        """Return list of public active rooms for easy 1-click joining."""
+        now = time.time()
+        result = []
+        for room in self.rooms.values():
+            # Check if room is within last 12 hours
+            if now - room.created_at < 43200:
+                result.append({
+                    "code": room.code,
+                    "host_name": room.host_name,
+                    "member_count": max(1, len(room.members)),
+                    "current_song": room.current_song,
+                    "is_playing": room.is_playing,
+                    "created_at": int(room.created_at)
+                })
+        # Sort by most recent
+        result.sort(key=lambda r: r.get("created_at", 0), reverse=True)
+        return result
 
     async def periodic_sync_loop(self):
         """Background heartbeat keeping playing rooms perfectly synchronized."""
+        save_counter = 0
         while True:
             try:
                 await asyncio.sleep(4.0)
@@ -156,6 +243,10 @@ class RoomManager:
                             "is_playing": True,
                             "server_time": now_ms
                         })
+                save_counter += 1
+                if save_counter >= 15: # Save state every ~60 seconds
+                    save_counter = 0
+                    self.save_to_disk()
             except Exception as e:
                 print("Sync loop exception:", e)
 

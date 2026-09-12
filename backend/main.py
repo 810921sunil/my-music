@@ -196,11 +196,19 @@ def create_room_endpoint(req: CreateRoomRequest):
         "room_state": room.to_dict()
     }
 
+@app.get("/api/rooms/active")
+def get_active_rooms_endpoint():
+    rooms = room_manager.get_active_rooms()
+    return {
+        "success": True,
+        "rooms": rooms
+    }
+
 @app.get("/api/room/{code}")
 def get_room_endpoint(code: str):
     room = room_manager.get_room(code)
     if not room:
-        raise HTTPException(status_code=404, detail="Music Room not found or has expired.")
+        raise HTTPException(status_code=404, detail="Music Room not found or has expired. Please check the code or ask the Host for an invite link.")
     return {
         "success": True,
         "room": room.to_dict()

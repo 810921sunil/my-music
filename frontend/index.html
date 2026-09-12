@@ -429,13 +429,26 @@
                                     <input type="text" id="join-room-name" placeholder="Enter your display name..." maxlength="25" value="Guest">
                                 </div>
                                 <div class="room-form-group">
-                                    <label for="join-room-code">Room Code</label>
-                                    <input type="text" id="join-room-code" placeholder="e.g. M7K9X2" maxlength="6" style="text-transform: uppercase; letter-spacing: 2px; font-weight: 700;">
+                                    <label for="join-room-code">Room Code (ya Invite Link)</label>
+                                    <input type="text" id="join-room-code" placeholder="e.g. M7K9X2 ya paste link" style="text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">
                                 </div>
                                 <button class="secondary-btn full-width" id="join-room-btn">
                                     <i class="fa-solid fa-right-to-bracket"></i> Join Room
                                 </button>
-                                <p class="room-helper-text"><i class="fa-solid fa-circle-info"></i> Host ka share kiya hua 6-letter code yahan daal kar join karein.</p>
+                                <p class="room-helper-text"><i class="fa-solid fa-circle-info"></i> Host ka share kiya hua 6-letter code ya pura link paste karein.</p>
+                            </div>
+                        </div>
+
+                        <!-- Active Live Rooms Quick-Join Section -->
+                        <div class="active-rooms-section" id="active-rooms-section">
+                            <div class="active-rooms-header">
+                                <h4><i class="fa-solid fa-tower-broadcast" style="color: #10b981;"></i> Active Live Rooms (Right Now)</h4>
+                                <button type="button" class="refresh-rooms-btn" id="refresh-active-rooms-btn" title="Refresh Live Rooms">
+                                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="active-rooms-grid" id="active-rooms-grid">
+                                <div class="loading-rooms-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Checking for active live rooms...</div>
                             </div>
                         </div>
 
@@ -752,6 +765,12 @@
                 <div class="playlists-select-list" id="playlists-select-list"></div>
             </div>
         </div>
+    <!-- 8. Mobile / Browser Audio Autoplay Unlock Overlay -->
+    <div id="audio-unlock-overlay" class="audio-unlock-overlay hidden">
+        <button id="audio-unlock-btn" class="audio-unlock-btn">
+            <i class="fa-solid fa-volume-high"></i>
+            <span>Tap to Enable Audio & Listen Live</span>
+        </button>
     </div>
 
     <script src="app.js"></script>
