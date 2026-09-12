@@ -1,18 +1,35 @@
+import sys
 import os
 import time
 import socket
 import asyncio
 import requests
 from typing import Optional, Dict, Any
+
+# Ensure backend directory is in sys.path for cloud deployment
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+if PARENT_DIR not in sys.path:
+    sys.path.insert(0, PARENT_DIR)
+
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-from extractor import extract_instagram_audio, CACHE_DIR
-from trending import get_trending_songs, get_artists, get_albums
-from search import search_full_songs, get_full_song_stream, get_search_suggestions, get_category_songs
-from rooms import room_manager
+
+try:
+    from backend.extractor import extract_instagram_audio, CACHE_DIR
+    from backend.trending import get_trending_songs, get_artists, get_albums
+    from backend.search import search_full_songs, get_full_song_stream, get_search_suggestions, get_category_songs
+    from backend.rooms import room_manager
+except ImportError:
+    from extractor import extract_instagram_audio, CACHE_DIR
+    from trending import get_trending_songs, get_artists, get_albums
+    from search import search_full_songs, get_full_song_stream, get_search_suggestions, get_category_songs
+    from rooms import room_manager
 
 app = FastAPI(title="My Music Pro API", version="3.0.0")
 

@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
+    PATH=/home/user/.local/bin:$PATH \
+    PYTHONPATH=/home/user/app:/home/user/app/backend
 
 WORKDIR $HOME/app
 
@@ -17,7 +18,7 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 COPY --chown=user . .
 
-ENV PORT=7860
-EXPOSE 7860
+ENV PORT=10000
+EXPOSE 10000
 
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
