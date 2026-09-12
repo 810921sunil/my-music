@@ -3,12 +3,16 @@ import re
 import hashlib
 from typing import Optional, Dict, Any
 import yt_dlp
-import imageio_ffmpeg
+
+try:
+    import imageio_ffmpeg
+    FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+except Exception:
+    import shutil
+    FFMPEG_EXE = shutil.which("ffmpeg") or "ffmpeg"
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audio_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
-
-FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 
 def get_url_hash(url: str) -> str:
     return hashlib.md5(url.strip().encode("utf-8")).hexdigest()[:12]
