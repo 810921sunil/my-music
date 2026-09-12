@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+backend/__pycache__/
+backend/audio_cache/
+.env
+*.log
+scratch/

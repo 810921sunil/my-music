@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Music - Feel The Music</title>
+    <meta name="theme-color" content="#0d0e15">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- ==================== LEFT SIDEBAR ==================== -->
+        <aside class="sidebar">
+            <!-- Brand Logo -->
+            <div class="brand" id="brand-home-btn" style="cursor: pointer;">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>My Music</h2>
+                    <span>Feel The Music</span>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-page="home">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#" class="nav-item" data-page="search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Search</span>
+                </a>
+                <a href="#" class="nav-item" data-page="library">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Library</span>
+                </a>
+                <a href="#" class="nav-item" data-page="favourites">
+                    <i class="fa-solid fa-heart"></i>
+                    <span>Favourites</span>
+                </a>
+                <a href="#" class="nav-item" data-page="playlists">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Playlists</span>
+                </a>
+                <a href="#" class="nav-item" data-page="recent">
+                    <i class="fa-regular fa-clock"></i>
+                    <span>Recently Played</span>
+                </a>
+                <a href="#" class="nav-item" data-page="room">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Music Room</span>
+                    <span class="room-nav-live-badge">SYNC</span>
+                </a>
+                <a href="#" class="nav-item" data-page="trending">
+                    <i class="fa-solid fa-fire"></i>
+                    <span>Trending</span>
+                </a>
+                <a href="#" class="nav-item" data-page="artists">
+                    <i class="fa-solid fa-user-group"></i>
+                    <span>Artists</span>
+                </a>
+                <a href="#" class="nav-item" data-page="albums">
+                    <i class="fa-solid fa-compact-disc"></i>
+                    <span>Albums</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Promo Card -->
+            <div class="sidebar-promo">
+                <div class="promo-icon">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+                <h4>Good Music<br>Better Mood</h4>
+                <p>Listen to your favourite songs anytime, anywhere.</p>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN WRAPPER ==================== -->
+        <main class="main-wrapper">
+            <!-- TOP APP BAR -->
+            <header class="top-bar">
+                <div class="search-area">
+                    <div class="search-input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="global-search" autocomplete="off" placeholder="Search for songs, artists, albums or paste Instagram link..." />
+                        <button id="clear-search-btn" class="clear-btn hidden" title="Clear"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <!-- Autocomplete Dropdown -->
+                    <div id="suggestions-dropdown" class="suggestions-dropdown hidden"></div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <!-- Dark / Light Mode Toggle -->
+                    <button class="action-btn" id="theme-toggle-btn" title="Toggle Dark / Light Mode">
+                        <i class="fa-regular fa-sun" id="theme-icon"></i>
+                    </button>
+                    <!-- Notifications -->
+                    <button class="action-btn" id="notif-btn" title="Notifications">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="badge-dot"></span>
+                    </button>
+                    <!-- User Profile -->
+                    <div class="user-profile" id="user-profile-btn" title="User Profile">
+                        <div class="avatar">S</div>
+                        <span class="user-name">Sunil</span>
+                        <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- SCROLLABLE CONTENT BODY -->
+            <div class="dashboard-scroll" id="dashboard-scroll">
+                
+                <!-- 1. HOME VIEW -->
+                <div id="view-home" class="page-view active">
+                    <!-- Hero Banner -->
+                    <section class="hero-banner">
+                        <div class="hero-content">
+                            <span class="hero-tag">MUSIC FOR A BETTER YOU</span>
+                            <h1 class="hero-title">Feel Every <span class="gradient-word">Beat</span></h1>
+                            <p class="hero-desc">Your favourite songs, all in one place.</p>
+                            <button class="hero-btn" id="hero-play-btn">
+                                <span>Play Now</span>
+                                <i class="fa-solid fa-play"></i>
+                            </button>
+                        </div>
+                        <div class="hero-visual">
+                            <div class="quote-wrapper">
+                                <p class="quote-text">Music<br>Is Always<br>a Good Idea</p>
+                                <span class="quote-heart">♡</span>
+                            </div>
+                            <div class="hero-glow"></div>
+                        </div>
+                    </section>
+
+                    <!-- Top Categories -->
+                    <section class="section-block">
+                        <div class="section-header">
+                            <h3>Top Categories</h3>
+                            <a href="#" class="see-all-link" id="see-all-categories">See All <i class="fa-solid fa-arrow-right"></i></a>
+                        </div>
+                        <div class="categories-grid" id="categories-grid">
+                            <div class="category-card" data-category="Trending" style="--cat-color: #ff4757;">
+                                <div class="cat-icon-wrap"><i class="fa-solid fa-fire"></i></div>
+                                <span>Trending</span>
+                            </div>
+                            <div class="category-card" data-category="Romantic" style="--cat-color: #ff6b81;">
+                                <div class="cat-icon-wrap"><i class="fa-solid fa-heart"></i></div>
+                                <span>Romantic</span>
+                            </div>
+                            <div class="category-card" data-category="Party" style="--cat-color: #a55eea;">
+                                <div class="cat-icon-wrap"><i class="fa-solid fa-globe"></i></div>
+                                <span>Party</span>
+                            </div>
+                            <div class="category-card" data-category="Chill" style="--cat-color: #2ed573;">
+                                <div class="cat-icon-wrap"><i class="fa-solid fa-leaf"></i></div>
+                                <span>Chill</span>
+                            </div>
+                            <div class="category-card" data-category="Workout" style="--cat-color: #ffa502;">
+                                <div class="cat-icon-wrap"><i class="fa-solid fa-dumbbell"></i></div>
+                                <span>Workout</span>
+                            </div>
+                            <div class="category-card" data-category="Sad" style="--cat-color: #1e90ff;">
+                                <div class="cat-icon-wrap"><i class="fa-solid fa-cloud-rain"></i></div>
+                                <span>Sad</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recently Played -->
+                    <section class="section-block">
+                        <div class="section-header">
+                            <h3>Recently Played</h3>
+                            <a href="#" class="see-all-link" id="see-all-recent">See All <i class="fa-solid fa-arrow-right"></i></a>
+                        </div>
+                        <div class="cards-grid" id="home-recent-grid">
+                            <!-- Injected by JS -->
+                        </div>
+                    </section>
+
+                    <!-- Trending Songs List -->
+                    <section class="section-block">
+                        <div class="section-header">
+                            <h3>Trending Songs</h3>
+                            <a href="#" class="see-all-link" id="see-all-trending">See All <i class="fa-solid fa-arrow-right"></i></a>
+                        </div>
+                        <div class="songs-table" id="home-trending-table">
+                            <!-- Injected by JS -->
+                        </div>
+                    </section>
+
+                    <!-- Bottom Feature Badges -->
+                    <div class="feature-pills-container">
+                        <div class="pill-group">
+                            <div class="feature-pill" data-action="library"><i class="fa-solid fa-music"></i> Full Song Playback</div>
+                            <div class="feature-pill" data-action="search"><i class="fa-solid fa-magnifying-glass"></i> Search Songs</div>
+                            <div class="feature-pill" data-action="playlists"><i class="fa-solid fa-list"></i> Create Playlists</div>
+                            <div class="feature-pill" data-action="favourites"><i class="fa-solid fa-heart"></i> Add to Favourites</div>
+                            <div class="feature-pill" data-action="recent"><i class="fa-regular fa-clock"></i> Recently Played</div>
+                            <div class="feature-pill" data-action="trending"><i class="fa-solid fa-fire"></i> Trending Songs</div>
+                            <div class="feature-pill" data-action="theme"><i class="fa-solid fa-circle-half-stroke"></i> Dark/Light Mode</div>
+                            <div class="feature-pill" data-action="profile"><i class="fa-solid fa-user"></i> User Profile</div>
+                        </div>
+                        <div class="slogan-pill">
+                            All Your Music | One Place | Anytime, Anywhere ♡
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. SEARCH & CATEGORY RESULTS VIEW -->
+                <div id="view-search" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title" id="search-view-title">Search Results</h2>
+                            <p class="page-subtitle" id="search-view-subtitle">Explore songs, artists, and albums</p>
+                        </div>
+                        <button class="primary-pill-btn hidden" id="search-play-all-btn">
+                            <i class="fa-solid fa-play"></i> Play All
+                        </button>
+                    </div>
+                    <div class="cards-grid-dense" id="search-view-grid"></div>
+                </div>
+
+                <!-- 3. LIBRARY VIEW -->
+                <div id="view-library" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title">Your Library</h2>
+                            <p class="page-subtitle">All your liked songs, created playlists, and saved albums</p>
+                        </div>
+                    </div>
+                    <div class="sub-tabs">
+                        <button class="sub-tab active" data-sub="lib-favs">Liked Songs</button>
+                        <button class="sub-tab" data-sub="lib-playlists">Playlists</button>
+                        <button class="sub-tab" data-sub="lib-recent">Recent</button>
+                    </div>
+                    <div id="library-content" class="cards-grid-dense"></div>
+                </div>
+
+                <!-- 4. FAVOURITES VIEW -->
+                <div id="view-favourites" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title"><i class="fa-solid fa-heart" style="color:#ec4899;"></i> Liked Songs</h2>
+                            <p class="page-subtitle" id="fav-count-subtitle">0 songs saved in your collection</p>
+                        </div>
+                        <button class="primary-pill-btn" id="fav-play-all-btn">
+                            <i class="fa-solid fa-play"></i> Play All
+                        </button>
+                    </div>
+                    <div class="songs-table" id="fav-table"></div>
+                </div>
+
+                <!-- 5. PLAYLISTS VIEW -->
+                <div id="view-playlists" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title">Playlists</h2>
+                            <p class="page-subtitle">Create and organize your favorite custom playlists</p>
+                        </div>
+                        <button class="primary-pill-btn" id="open-create-playlist-btn">
+                            <i class="fa-solid fa-plus"></i> New Playlist
+                        </button>
+                    </div>
+                    <div class="playlists-grid" id="playlists-grid"></div>
+                </div>
+
+                <!-- 6. RECENTLY PLAYED VIEW -->
+                <div id="view-recent" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title">Recently Played</h2>
+                            <p class="page-subtitle">Tracks you listened to recently</p>
+                        </div>
+                        <button class="primary-pill-btn" id="recent-play-all-btn">
+                            <i class="fa-solid fa-play"></i> Replay All
+                        </button>
+                    </div>
+                    <div class="cards-grid-dense" id="recent-view-grid"></div>
+                </div>
+
+                <!-- 7. TRENDING VIEW -->
+                <div id="view-trending" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title"><i class="fa-solid fa-fire" style="color:#ff4757;"></i> Top Trending 2026</h2>
+                            <p class="page-subtitle">Viral songs topping the music charts and Reels right now</p>
+                        </div>
+                        <button class="primary-pill-btn" id="trending-play-all-btn">
+                            <i class="fa-solid fa-play"></i> Play All
+                        </button>
+                    </div>
+                    <div class="songs-table" id="trending-view-table"></div>
+                </div>
+
+                <!-- 8. ARTISTS VIEW -->
+                <div id="view-artists" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title">Popular Artists</h2>
+                            <p class="page-subtitle">Select any artist to view all their hit tracks</p>
+                        </div>
+                    </div>
+                    <div class="artists-grid" id="artists-grid"></div>
+                </div>
+
+                <!-- 9. ALBUMS VIEW -->
+                <div id="view-albums" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title">Popular Albums</h2>
+                            <p class="page-subtitle">Top Bollywood and International albums</p>
+                        </div>
+                    </div>
+                    <div class="albums-grid" id="albums-grid"></div>
+                </div>
+
+                <!-- 10. DETAIL VIEW (Artist / Album / Playlist detail page) -->
+                <div id="view-detail" class="page-view">
+                    <div class="detail-banner" id="detail-banner">
+                        <img id="detail-cover" src="" alt="Cover" class="detail-cover" />
+                        <div class="detail-meta">
+                            <span class="detail-type" id="detail-type">ALBUM</span>
+                            <h1 class="detail-title" id="detail-title">Title</h1>
+                            <p class="detail-desc" id="detail-desc">Artist • Year • Songs</p>
+                            <div class="detail-actions">
+                                <button class="primary-pill-btn" id="detail-play-all-btn">
+                                    <i class="fa-solid fa-play"></i> Play All
+                                </button>
+                                <button class="icon-btn-round" id="detail-fav-btn">
+                                    <i class="fa-regular fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="songs-table" id="detail-songs-table"></div>
+                </div>
+
+                <!-- 11. SETTINGS VIEW -->
+                <div id="view-settings" class="page-view">
+                    <div class="view-header-row">
+                        <div>
+                            <h2 class="page-title">Settings & Preferences</h2>
+                            <p class="page-subtitle">Configure playback quality, audio settings, and themes</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel">
+                        <div class="setting-card">
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Streaming Audio Quality</h4>
+                                    <p>Select preferred bitrate for playback</p>
+                                </div>
+                                <select id="setting-quality-select" class="setting-select">
+                                    <option value="320">Extreme (320 kbps HD)</option>
+                                    <option value="192" selected>High (192 kbps)</option>
+                                    <option value="128">Data Saver (128 kbps)</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Theme Mode</h4>
+                                    <p>Toggle between Dark mode and Light mode</p>
+                                </div>
+                                <button class="secondary-btn" id="setting-theme-btn">Switch Theme</button>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Continuous Auto-Play Next</h4>
+                                    <p>Automatically play next track in queue when current song ends</p>
+                                </div>
+                                <input type="checkbox" id="setting-autoplay-toggle" checked />
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Reset Data & Storage</h4>
+                                    <p>Clear song playback history and cached playlists</p>
+                                </div>
+                                <button class="danger-btn" id="setting-clear-data-btn">Clear All Data</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. MUSIC ROOM VIEW -->
+                <div id="view-room" class="page-view">
+                    <!-- Lobby State (When not connected to any room) -->
+                    <div id="room-lobby" class="room-lobby">
+                        <div class="room-hero">
+                            <div class="room-hero-badge"><i class="fa-solid fa-tower-broadcast"></i> LIVE SYNC ROOMS</div>
+                            <h2>Listen Together in Real-Time</h2>
+                            <p>Connect with friends anywhere in the world. Host a room or join one with a 6-character room code to stream music together in real-time with sub-second synchronization.</p>
+                        </div>
+
+                        <div class="room-lobby-grid">
+                            <!-- Card 1: Create Room -->
+                            <div class="room-action-card">
+                                <div class="card-icon-wrap gradient-purple">
+                                    <i class="fa-solid fa-crown"></i>
+                                </div>
+                                <h3>Create a Music Room</h3>
+                                <p>Start a new room as Host. You control the music, playback, and queue for everyone in the room.</p>
+                                <div class="room-form-group">
+                                    <label for="create-room-name">Your Name</label>
+                                    <input type="text" id="create-room-name" placeholder="Enter your display name..." maxlength="25" value="Host">
+                                </div>
+                                <button class="primary-btn full-width" id="create-room-btn">
+                                    <i class="fa-solid fa-plus"></i> Create New Room
+                                </button>
+                            </div>
+
+                            <!-- Card 2: Join Room -->
+                            <div class="room-action-card">
+                                <div class="card-icon-wrap gradient-pink">
+                                    <i class="fa-solid fa-headphones"></i>
+                                </div>
+                                <h3>Join a Music Room</h3>
+                                <p>Enter a 6-character code or use an invite link to jump into an existing room with your friends.</p>
+                                <div class="room-form-group">
+                                    <label for="join-room-name">Your Name</label>
+                                    <input type="text" id="join-room-name" placeholder="Enter your display name..." maxlength="25" value="Guest">
+                                </div>
+                                <div class="room-form-group">
+                                    <label for="join-room-code">Room Code</label>
+                                    <input type="text" id="join-room-code" placeholder="e.g. M7K9X2" maxlength="6" style="text-transform: uppercase; letter-spacing: 2px; font-weight: 700;">
+                                </div>
+                                <button class="secondary-btn full-width" id="join-room-btn">
+                                    <i class="fa-solid fa-right-to-bracket"></i> Join Room
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Feature highlights -->
+                        <div class="room-features-row">
+                            <div class="room-feature-item">
+                                <i class="fa-solid fa-bolt"></i>
+                                <div>
+                                    <h5>Sub-Second Sync</h5>
+                                    <p>Low latency WebSocket synchronization keeps everyone on the exact same beat.</p>
+                                </div>
+                            </div>
+                            <div class="room-feature-item">
+                                <i class="fa-solid fa-volume-high"></i>
+                                <div>
+                                    <h5>Independent Volume</h5>
+                                    <p>Your volume slider is 100% individual and never changes for other listeners.</p>
+                                </div>
+                            </div>
+                            <div class="room-feature-item">
+                                <i class="fa-solid fa-comments"></i>
+                                <div>
+                                    <h5>Live Chat & Reactions</h5>
+                                    <p>Send instant emoji reactions and chat with all connected room members.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Room State (When connected) -->
+                    <div id="room-active" class="room-active hidden">
+                        <!-- Top Header / Controls -->
+                        <div class="room-active-header">
+                            <div class="room-header-info">
+                                <div class="room-code-tag">
+                                    <span class="pulse-dot"></span>
+                                    <span>ROOM: <strong id="active-room-code-display">------</strong></span>
+                                </div>
+                                <span class="room-role-badge" id="active-room-role-badge">
+                                    <i class="fa-solid fa-crown"></i> Host
+                                </span>
+                                <span class="room-listeners-count" id="active-room-listeners-count">
+                                    <i class="fa-solid fa-users"></i> 1 listener
+                                </span>
+                            </div>
+                            <div class="room-header-actions">
+                                <button class="tool-btn" id="room-copy-code-btn" title="Copy 6-digit room code">
+                                    <i class="fa-regular fa-copy"></i> Copy Code
+                                </button>
+                                <button class="tool-btn" id="room-share-link-btn" title="Copy shareable invite link">
+                                    <i class="fa-solid fa-share-nodes"></i> Share Link
+                                </button>
+                                <button class="danger-btn room-leave-btn" id="room-leave-btn" title="Leave this room">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Leave Room
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Main Room Layout: Two Columns -->
+                        <div class="room-active-grid">
+                            <!-- Left: Stage, Visualizer & Queue -->
+                            <div class="room-stage-col">
+                                <div class="room-now-playing-card">
+                                    <div class="room-np-left">
+                                        <img id="room-track-cover" src="https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=300" alt="Cover" class="room-track-cover" />
+                                        <div class="room-visualizer-bars">
+                                            <span class="eq-bar"></span>
+                                            <span class="eq-bar"></span>
+                                            <span class="eq-bar"></span>
+                                            <span class="eq-bar"></span>
+                                            <span class="eq-bar"></span>
+                                        </div>
+                                    </div>
+                                    <div class="room-np-details">
+                                        <span class="live-pill"><i class="fa-solid fa-tower-broadcast"></i> SYNCHRONIZED STREAM</span>
+                                        <h3 id="room-track-title">Select a song to play</h3>
+                                        <p id="room-track-artist">Host will start playback</p>
+
+                                        <!-- Host Notice vs Member Notice -->
+                                        <div class="room-control-notice" id="room-control-notice">
+                                            <i class="fa-solid fa-circle-info"></i>
+                                            <span id="room-control-notice-text">You are the Host. Any song you play in the app will sync to all members.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Room Queue -->
+                                <div class="room-queue-card">
+                                    <div class="room-card-head">
+                                        <h4><i class="fa-solid fa-list-ul"></i> Room Up Next</h4>
+                                        <span id="room-queue-count" class="badge">0 songs</span>
+                                    </div>
+                                    <div class="room-queue-list" id="room-queue-list">
+                                        <div class="empty-state-sm">Queue is empty. Select songs to queue!</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Members & Live Chat -->
+                            <div class="room-social-col">
+                                <!-- Members Box -->
+                                <div class="room-members-card">
+                                    <div class="room-card-head">
+                                        <h4><i class="fa-solid fa-users"></i> Connected Members</h4>
+                                        <span id="room-member-count-badge" class="badge">1 Online</span>
+                                    </div>
+                                    <div class="room-members-list" id="room-members-list">
+                                        <!-- Dynamically rendered -->
+                                    </div>
+                                </div>
+
+                                <!-- Live Chat & Reactions -->
+                                <div class="room-chat-card">
+                                    <div class="room-card-head">
+                                        <h4><i class="fa-solid fa-comments"></i> Room Chat</h4>
+                                        <!-- Reaction Buttons Bar -->
+                                        <div class="room-reactions-bar">
+                                            <button class="reaction-pill" data-emoji="🔥">🔥</button>
+                                            <button class="reaction-pill" data-emoji="❤️">❤️</button>
+                                            <button class="reaction-pill" data-emoji="🎵">🎵</button>
+                                            <button class="reaction-pill" data-emoji="👏">👏</button>
+                                            <button class="reaction-pill" data-emoji="🎉">🎉</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="room-chat-messages" id="room-chat-messages">
+                                        <div class="chat-system-msg">Welcome to the Music Room! Chat and send reactions with friends here.</div>
+                                    </div>
+
+                                    <form class="room-chat-input-form" id="room-chat-form">
+                                        <input type="text" id="room-chat-input" placeholder="Type a message..." maxlength="200" autocomplete="off" />
+                                        <button type="submit" class="chat-send-btn" id="room-chat-send-btn" title="Send message">
+                                            <i class="fa-solid fa-paper-plane"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-spacer"></div>
+            </div>
+        </main>
+
+        <!-- ==================== PERSISTENT BOTTOM PLAYER ==================== -->
+        <footer class="bottom-player" id="bottom-player">
+            <!-- Room sync badge banner inside bottom player -->
+            <div class="bottom-room-indicator hidden" id="bottom-room-indicator">
+                <span class="pulse-dot"></span>
+                <span id="bottom-room-status">Room: M7K9X2 (Syncing)</span>
+            </div>
+
+            <!-- Left: Current Track Info -->
+            <div class="player-left">
+                <img id="player-thumb" src="https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=200" alt="Cover" class="player-thumb" />
+                <div class="player-meta">
+                    <h5 id="player-title">Apna Bana Le</h5>
+                    <p id="player-artist">Arijit Singh</p>
+                </div>
+                <button class="player-icon-btn heart-btn" id="player-fav-btn" title="Add to Favourites">
+                    <i class="fa-regular fa-heart"></i>
+                </button>
+            </div>
+
+            <!-- Center: Controls & Seekbar -->
+            <div class="player-center">
+                <div class="playback-controls">
+                    <button class="control-btn" id="shuffle-btn" title="Shuffle (🔀)">
+                        <i class="fa-solid fa-shuffle"></i>
+                    </button>
+                    <button class="control-btn" id="prev-btn" title="Previous (⏮)">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button class="play-btn-round" id="play-pause-btn" title="Play/Pause (▶️ / ⏸)">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <button class="control-btn" id="next-btn" title="Next (⏭)">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                    <button class="control-btn" id="loop-btn" title="Repeat (🔁)">
+                        <i class="fa-solid fa-repeat"></i>
+                    </button>
+                </div>
+
+                <div class="timeline-wrapper">
+                    <span class="time-label" id="current-time">0:00</span>
+                    <div class="seekbar-track" id="seekbar-track" title="Seek (🎚️)">
+                        <div class="seekbar-fill" id="seekbar-fill"></div>
+                        <div class="seekbar-thumb" id="seekbar-thumb"></div>
+                    </div>
+                    <span class="time-label" id="total-duration">4:21</span>
+                </div>
+            </div>
+
+            <!-- Right: Volume & Queue -->
+            <div class="player-right">
+                <button class="control-btn" id="volume-icon-btn" title="Mute / Unmute (🔊)">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <div class="volume-slider-wrap" title="Volume Slider">
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" />
+                </div>
+                <button class="control-btn" id="queue-btn" title="View Queue (📃)">
+                    <i class="fa-solid fa-list-ul"></i>
+                </button>
+            </div>
+        </footer>
+
+        <!-- Hidden Audio Element -->
+        <audio id="audio-engine" preload="auto"></audio>
+    </div>
+
+    <!-- ==================== POPUPS & MODALS ==================== -->
+
+    <!-- 1. Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- 2. Notifications Dropdown Panel -->
+    <div id="notif-panel" class="dropdown-panel hidden">
+        <div class="panel-header">
+            <h4>Notifications</h4>
+            <span class="badge-count">2 New</span>
+        </div>
+        <div class="panel-content">
+            <div class="notif-item unread">
+                <i class="fa-solid fa-fire notif-icon"></i>
+                <div>
+                    <h6>New Trending Hit!</h6>
+                    <p>Starboy is trending with 1.2M viral reels.</p>
+                </div>
+            </div>
+            <div class="notif-item">
+                <i class="fa-solid fa-heart notif-icon"></i>
+                <div>
+                    <h6>Welcome to My Music</h6>
+                    <p>Explore 30+ songs across Romantic, Party, Chill, and Sad categories.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. User Profile Dropdown -->
+    <div id="profile-menu" class="dropdown-panel profile-panel hidden">
+        <div class="profile-header">
+            <div class="avatar-large">S</div>
+            <div>
+                <h4>Sunil</h4>
+                <p>Music Lover • Pro</p>
+            </div>
+        </div>
+        <div class="profile-overview-stats">
+            <div class="stat-box"><span id="stat-favs">0</span><small>Liked</small></div>
+            <div class="stat-box"><span id="stat-playlists">0</span><small>Playlists</small></div>
+            <div class="stat-box"><span id="stat-recent">0</span><small>Played</small></div>
+        </div>
+        <div class="profile-menu-links">
+            <a href="#" id="menu-view-favs"><i class="fa-solid fa-heart"></i> My Favourites</a>
+            <a href="#" id="menu-view-playlists"><i class="fa-solid fa-list-check"></i> My Playlists</a>
+            <a href="#" id="menu-settings-btn"><i class="fa-solid fa-gear"></i> Settings</a>
+        </div>
+    </div>
+
+    <!-- 4. Queue Drawer -->
+    <div id="queue-drawer" class="queue-drawer hidden">
+        <div class="queue-header">
+            <h4><i class="fa-solid fa-list-ul"></i> Playing Queue (<span id="queue-count">0</span>)</h4>
+            <div class="queue-actions">
+                <button id="clear-queue-btn" class="text-link-btn">Clear</button>
+                <button id="close-queue-btn" class="icon-btn-round"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="queue-list" id="queue-list"></div>
+    </div>
+
+    <!-- 5. 3-Dots Context Menu -->
+    <div id="song-context-menu" class="context-menu hidden">
+        <button class="context-item" id="ctx-play"><i class="fa-solid fa-play"></i> Play Song</button>
+        <button class="context-item" id="ctx-queue"><i class="fa-solid fa-list-ul"></i> Add to Queue</button>
+        <button class="context-item" id="ctx-fav"><i class="fa-solid fa-heart"></i> Favourite / Unfavourite</button>
+        <button class="context-item" id="ctx-add-playlist"><i class="fa-solid fa-plus"></i> Add to Playlist...</button>
+        <button class="context-item" id="ctx-view-artist"><i class="fa-solid fa-user"></i> View Artist</button>
+        <button class="context-item" id="ctx-view-album"><i class="fa-solid fa-compact-disc"></i> View Album</button>
+        <button class="context-item" id="ctx-download"><i class="fa-solid fa-download"></i> Download MP3</button>
+    </div>
+
+    <!-- 6. Create Playlist Modal -->
+    <div id="create-playlist-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Create New Playlist</h3>
+                <button id="close-create-playlist-btn" class="icon-btn-round"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <label>Playlist Name</label>
+                <input type="text" id="playlist-name-input" class="modal-input" placeholder="e.g. My Favorite Punjabi Hits, Late Night Vibes..." />
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="cancel-playlist-btn">Cancel</button>
+                <button class="primary-pill-btn" id="confirm-create-playlist-btn">Create Playlist</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Add Song to Playlist Modal -->
+    <div id="add-to-playlist-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add to Playlist</h3>
+                <button id="close-add-playlist-btn" class="icon-btn-round"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="add-song-title-label" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;"></p>
+                <div class="playlists-select-list" id="playlists-select-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
