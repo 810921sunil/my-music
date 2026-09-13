@@ -1367,30 +1367,57 @@ function setPlayerMetadata(song) {
 
 function togglePlayPause() {
     if (state.room && state.room.code && !state.room.isHost) {
+        // Listener clicked play: if room is playing, tune them in!
+        if (state.room.isPlaying && audio.paused) {
+            audio.play().then(() => {
+                state.isPlaying = true;
+                updatePlayIcons();
+                updateRoomVisualizer();
+                hideAudioUnlockOverlay();
+                updateRoomStageActionBtn();
+                showToast('🎧 Tuned in live with Host!');
+            }).catch(e => {
+                console.warn('Tune in error:', e);
+                showAudioUnlockOverlay();
+            });
+            return;
+        }
         showToast('🎧 Host controls playback. Synced with Host.');
         return;
     }
+
     if (!state.currentSong && state.trendingSongs.length > 0) {
         playSong(state.trendingSongs[0], 0, state.trendingSongs);
         return;
     }
+
     if (audio.paused) {
         audio.play().then(() => {
             state.isPlaying = true;
             updatePlayIcons();
             if (state.room && state.room.code && state.room.isHost && !state.room.isSyncing) {
-                broadcastRoomEvent({ action: 'PLAY', position: audio.currentTime });
+                broadcastRoomEvent({
+                    action: 'PLAY',
+                    position: audio.currentTime,
+                    song: state.currentSong
+                });
             }
             updateRoomVisualizer();
+            updateRoomStageActionBtn();
         }).catch(e => console.warn(e));
     } else {
         audio.pause();
         state.isPlaying = false;
         updatePlayIcons();
         if (state.room && state.room.code && state.room.isHost && !state.room.isSyncing) {
-            broadcastRoomEvent({ action: 'PAUSE', position: audio.currentTime });
+            broadcastRoomEvent({
+                action: 'PAUSE',
+                position: audio.currentTime,
+                song: state.currentSong
+            });
         }
         updateRoomVisualizer();
+        updateRoomStageActionBtn();
     }
 }
 
@@ -1686,6 +1713,8 @@ if (createRoomBtn) {
         state.room.name = name;
         localStorage.setItem('instasound_user_name', name);
 
+        const currentOrTrending = state.currentSong || (state.trendingSongs.length > 0 ? state.trendingSongs[0] : null);
+
         createRoomBtn.disabled = true;
         createRoomBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
 
@@ -1693,7 +1722,11 @@ if (createRoomBtn) {
             const res = await fetch('/api/room/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ host_name: name, client_id: state.room.clientId })
+                body: JSON.stringify({
+                    host_name: name,
+                    client_id: state.room.clientId,
+                    initial_song: currentOrTrending
+                })
             });
             const data = await res.json();
 
@@ -1702,6 +1735,9 @@ if (createRoomBtn) {
                 state.room.isHost = true;
                 state.room.hostId = state.room.clientId;
                 state.room.hostName = name;
+                if (currentOrTrending) {
+                    state.room.currentSong = currentOrTrending;
+                }
 
                 connectRoomWebSocket(data.room_code, state.room.clientId, name);
                 updateRoomUrl(data.room_code);
@@ -1861,8 +1897,9 @@ function handleRoomWsMessage(msg) {
         syncSongPlayback(payload.song, payload.position, payload.is_playing, serverTime);
     } else if (event === 'PLAY_SYNC') {
         state.room.isPlaying = true;
-        if (payload.song) {
-            syncSongPlayback(payload.song, payload.position, true, serverTime);
+        const songToPlay = payload.song || state.room.currentSong || state.currentSong;
+        if (songToPlay && (!state.currentSong || String(state.currentSong.id) !== String(songToPlay.id) || !audio.src)) {
+            syncSongPlayback(songToPlay, payload.position, true, serverTime);
         } else {
             const latency = (Date.now() - serverTime) / 1000;
             const targetPos = Math.max(0, (payload.position || 0) + latency);
@@ -1872,13 +1909,21 @@ function handleRoomWsMessage(msg) {
             }
 
             state.room.isSyncing = true;
-            audio.play().catch(e => console.warn('Play sync:', e)).finally(() => {
+            audio.play().then(() => {
+                hideAudioUnlockOverlay();
+                updateRoomStageActionBtn();
+            }).catch(e => {
+                console.warn('Play sync autoplay blocked:', e);
+                showAudioUnlockOverlay();
+                updateRoomStageActionBtn();
+            }).finally(() => {
                 state.room.isSyncing = false;
             });
 
             state.isPlaying = true;
             updatePlayIcons();
             updateRoomVisualizer();
+            updateRoomStageActionBtn();
         }
     } else if (event === 'PAUSE_SYNC') {
         state.room.isPlaying = false;
@@ -1890,6 +1935,7 @@ function handleRoomWsMessage(msg) {
         state.isPlaying = false;
         updatePlayIcons();
         updateRoomVisualizer();
+        updateRoomStageActionBtn();
         state.room.isSyncing = false;
     } else if (event === 'SEEK_SYNC') {
         const isPlaying = !audio.paused;
@@ -1992,9 +2038,11 @@ function syncSongPlayback(song, position, isPlaying, serverTime) {
             updatePlayIcons();
             updateRoomVisualizer();
             hideAudioUnlockOverlay();
+            updateRoomStageActionBtn();
         }).catch(err => {
             console.warn('Sync audio play error (Autoplay restricted):', err);
             showAudioUnlockOverlay();
+            updateRoomStageActionBtn();
         }).finally(() => {
             state.room.isSyncing = false;
         });
@@ -2006,6 +2054,7 @@ function syncSongPlayback(song, position, isPlaying, serverTime) {
         updateRoomVisualizer();
         state.room.isSyncing = false;
         hideAudioUnlockOverlay();
+        updateRoomStageActionBtn();
     }
 }
 
@@ -2021,6 +2070,7 @@ function renderRoomView() {
         renderRoomHeader();
         renderRoomMembers();
         renderRoomQueue();
+        renderRoomQuickSongs();
         updateRoomNowPlayingUI();
     }
     updateBottomRoomIndicator();
@@ -2120,6 +2170,7 @@ function updateRoomNowPlayingUI() {
         if (roomTrackArtist) roomTrackArtist.innerText = 'Host will start playback';
     }
     updateRoomVisualizer();
+    updateRoomStageActionBtn();
 }
 
 function updateRoomVisualizer() {
@@ -2130,6 +2181,75 @@ function updateRoomVisualizer() {
         roomVisualizer.classList.add('eq-paused');
     }
 }
+
+const roomStageActionBtn = document.getElementById('room-stage-action-btn');
+const roomQuickSongsList = document.getElementById('room-quick-songs-list');
+
+function updateRoomStageActionBtn() {
+    if (!roomStageActionBtn) return;
+    
+    if (state.room.isHost) {
+        roomStageActionBtn.className = 'stage-action-btn';
+        if (state.isPlaying && !audio.paused) {
+            roomStageActionBtn.innerHTML = '<i class="fa-solid fa-pause"></i> <span>Pause for Room</span>';
+        } else {
+            const hasSong = state.room.currentSong || state.currentSong;
+            roomStageActionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span>${hasSong ? 'Play for Room' : 'Start Trending Hit'}</span>`;
+        }
+    } else {
+        // Listener
+        if (state.room.isPlaying && audio.paused) {
+            roomStageActionBtn.className = 'stage-action-btn tune-in';
+            roomStageActionBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> <span>Tap to Tune In Live!</span>';
+        } else if (state.room.isPlaying && !audio.paused) {
+            roomStageActionBtn.className = 'stage-action-btn';
+            roomStageActionBtn.innerHTML = '<i class="fa-solid fa-headphones"></i> <span>Listening with Host 🟢</span>';
+        } else {
+            roomStageActionBtn.className = 'stage-action-btn';
+            roomStageActionBtn.innerHTML = '<i class="fa-solid fa-circle-pause"></i> <span>Host is Paused</span>';
+        }
+    }
+}
+
+if (roomStageActionBtn) {
+    roomStageActionBtn.addEventListener('click', () => {
+        togglePlayPause();
+    });
+}
+
+function renderRoomQuickSongs() {
+    if (!roomQuickSongsList) return;
+    const songs = (state.trendingSongs && state.trendingSongs.length > 0) ? state.trendingSongs : state.playlist;
+    if (!songs || songs.length === 0) {
+        roomQuickSongsList.innerHTML = '<div class="empty-state-sm">Loading songs...</div>';
+        return;
+    }
+
+    roomQuickSongsList.innerHTML = songs.slice(0, 10).map((s, idx) => `
+        <div class="room-quick-song-row" onclick="playSongInRoom('${escapeHtml(s.id)}')">
+            <img src="${s.thumbnail || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120'}" class="room-quick-song-thumb" />
+            <div class="room-quick-song-info">
+                <h6>${escapeHtml(s.title)}</h6>
+                <p>${escapeHtml(s.artist)}</p>
+            </div>
+            <span class="room-quick-play-badge">
+                <i class="fa-solid fa-play"></i> Play
+            </span>
+        </div>
+    `).join('');
+}
+
+window.playSongInRoom = function(songId) {
+    if (state.room && state.room.code && !state.room.isHost) {
+        showToast('🎧 Host controls song selection.');
+        return;
+    }
+    const song = songMap.get(String(songId)) || (state.trendingSongs && state.trendingSongs.find(s => String(s.id) === String(songId)));
+    if (song) {
+        playSong(song, 0, state.trendingSongs);
+        showToast(`▶ Playing "${song.title}" for Room!`);
+    }
+};
 
 function updateBottomRoomIndicator() {
     if (!bottomRoomIndicator) return;

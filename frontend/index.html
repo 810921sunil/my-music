@@ -525,13 +525,29 @@
                                     <div class="room-np-details">
                                         <span class="live-pill"><i class="fa-solid fa-tower-broadcast"></i> SYNCHRONIZED STREAM</span>
                                         <h3 id="room-track-title">Select a song to play</h3>
-                                        <p id="room-track-artist">Host will start playback</p>
+                                        <!-- Big Room Stage Action Button -->
+                                        <div class="room-stage-btn-row">
+                                            <button class="stage-action-btn" id="room-stage-action-btn">
+                                                <i class="fa-solid fa-play"></i> <span id="room-stage-btn-text">Play Song</span>
+                                            </button>
+                                        </div>
 
                                         <!-- Host Notice vs Member Notice -->
                                         <div class="room-control-notice" id="room-control-notice">
                                             <i class="fa-solid fa-circle-info"></i>
                                             <span id="room-control-notice-text">You are the Host. Any song you play in the app will sync to all members.</span>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <!-- Quick Song Chooser for Room -->
+                                <div class="room-quick-songs-card" id="room-quick-songs-card">
+                                    <div class="room-card-head">
+                                        <h4><i class="fa-solid fa-music"></i> Choose Song to Play in Room</h4>
+                                        <span class="badge">Trending Hits</span>
+                                    </div>
+                                    <div class="room-quick-songs-list" id="room-quick-songs-list">
+                                        <!-- Rendered by JS: Host clicks any song to immediately stream to room -->
                                     </div>
                                 </div>
 

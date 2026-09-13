@@ -2491,6 +2491,45 @@ body {
     color: var(--text-secondary);
 }
 
+.room-stage-btn-row {
+    margin-top: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.stage-action-btn {
+    background: var(--accent-gradient);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stage-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(236, 72, 153, 0.6);
+}
+
+.stage-action-btn.tune-in {
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.45);
+    animation: pulseTuneIn 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseTuneIn {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}
+
 .room-control-notice {
     margin-top: 8px;
     display: flex;
@@ -2502,6 +2541,79 @@ body {
     border-radius: var(--radius-sm);
     font-size: 0.76rem;
     color: var(--text-secondary);
+}
+
+/* Quick Song Picker for Room */
+.room-quick-songs-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.room-quick-songs-list {
+    padding: 10px 14px;
+    max-height: 240px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.room-quick-song-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.room-quick-song-row:hover {
+    background: rgba(236, 72, 153, 0.15);
+    transform: translateX(3px);
+}
+
+.room-quick-song-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.room-quick-song-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.room-quick-song-info h6 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.room-quick-song-info p {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+}
+
+.room-quick-play-badge {
+    background: var(--accent-gradient);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .room-control-notice i {
