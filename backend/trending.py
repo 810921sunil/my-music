@@ -3,7 +3,6 @@
 TRENDING_SONGS = [
     {
         "id": "song_apna_bana_le",
-        "youtube_id": "u2NAuswnTKs",
         "search_query": "Apna Bana Le Bhediya Arijit Singh",
         "title": "Apna Bana Le",
         "artist": "Arijit Singh",
@@ -11,13 +10,12 @@ TRENDING_SONGS = [
         "duration": 261,
         "duration_str": "4:21",
         "thumbnail": "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_apna_bana_le",
+        "audio_url": "https://aac.saavncdn.com/228/bed7fe5f8fe04ae6432bcb0717e2b74e_320.mp4",
         "category": "Romantic",
         "views": "12.4M plays"
     },
     {
         "id": "song_kesariya",
-        "youtube_id": "6RdS6wLu7RY",
         "search_query": "Kesariya Brahmastra Arijit Singh",
         "title": "Kesariya",
         "artist": "Arijit Singh",
@@ -25,13 +23,12 @@ TRENDING_SONGS = [
         "duration": 268,
         "duration_str": "4:28",
         "thumbnail": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_kesariya",
+        "audio_url": "https://aac.saavncdn.com/871/c2febd353f3a076a406fa37510f31f9f_320.mp4",
         "category": "Romantic",
         "views": "28.1M plays"
     },
     {
         "id": "song_tum_hi_ho",
-        "youtube_id": "Umqb9KENgmk",
         "search_query": "Tum Hi Ho Aashiqui 2 Arijit Singh",
         "title": "Tum Hi Ho",
         "artist": "Arijit Singh",
@@ -39,13 +36,12 @@ TRENDING_SONGS = [
         "duration": 262,
         "duration_str": "4:22",
         "thumbnail": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_tum_hi_ho",
+        "audio_url": "https://aac.saavncdn.com/430/5c5ea5cc00e3bff45616013226f376fe_320.mp4",
         "category": "Sad",
         "views": "35.6M plays"
     },
     {
         "id": "song_faded",
-        "youtube_id": "psn_rs_a5O0",
         "search_query": "Faded Alan Walker",
         "title": "Faded",
         "artist": "Alan Walker",
@@ -53,13 +49,12 @@ TRENDING_SONGS = [
         "duration": 212,
         "duration_str": "3:32",
         "thumbnail": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_faded",
+        "audio_url": "https://aac.saavncdn.com/562/b331b68fc5e35ff7d7cd7ce0e25158d7_320.mp4",
         "category": "Chill",
         "views": "45.2M plays"
     },
     {
         "id": "song_shape_of_you",
-        "youtube_id": "_dK2tDK9grQ",
         "search_query": "Shape of You Ed Sheeran",
         "title": "Shape of You",
         "artist": "Ed Sheeran",
@@ -67,13 +62,12 @@ TRENDING_SONGS = [
         "duration": 233,
         "duration_str": "3:53",
         "thumbnail": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_shape_of_you",
+        "audio_url": "https://aac.saavncdn.com/126/da7cde34b008294e181842062530546d_320.mp4",
         "category": "Party",
         "views": "58.9M plays"
     },
     {
         "id": "song_channa_mereya",
-        "youtube_id": "bzSTpdcs-EI",
         "search_query": "Channa Mereya Ae Dil Hai Mushkil Arijit Singh",
         "title": "Channa Mereya",
         "artist": "Arijit Singh",
@@ -81,13 +75,12 @@ TRENDING_SONGS = [
         "duration": 289,
         "duration_str": "4:49",
         "thumbnail": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_channa_mereya",
+        "audio_url": "https://aac.saavncdn.com/597/6da0627cfcc4b937160f664841e4572d_320.mp4",
         "category": "Sad",
         "views": "19.3M plays"
     },
     {
         "id": "song_starboy",
-        "youtube_id": "Rif-RTvmmss",
         "search_query": "Starboy The Weeknd",
         "title": "Starboy",
         "artist": "The Weeknd",
@@ -95,13 +88,12 @@ TRENDING_SONGS = [
         "duration": 230,
         "duration_str": "3:50",
         "thumbnail": "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_starboy",
+        "audio_url": "https://aac.saavncdn.com/396/b4e570050007b056c662f2a98c9f28ec_320.mp4",
         "category": "Party",
         "views": "33.5M plays"
     },
     {
         "id": "song_lover",
-        "youtube_id": "aoIhamvZKdQ",
         "search_query": "Lover Diljit Dosanjh",
         "title": "Lover",
         "artist": "Diljit Dosanjh",
@@ -109,7 +101,7 @@ TRENDING_SONGS = [
         "duration": 195,
         "duration_str": "3:15",
         "thumbnail": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&q=80",
-        "audio_url": "/api/stream-audio/song_lover",
+        "audio_url": "https://aac.saavncdn.com/209/88cd9a1cc0af8768d67272876bb09851_320.mp4",
         "category": "Romantic",
         "views": "24.1M plays"
     }

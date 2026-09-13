@@ -3,8 +3,10 @@ import urllib.request
 import urllib.parse
 import json
 import hashlib
+import base64
+import requests
 from typing import List, Dict, Any
-import yt_dlp
+from Crypto.Cipher import DES
 
 try:
     import imageio_ffmpeg
@@ -20,35 +22,61 @@ _STREAM_CACHE = {}
 _CATEGORY_CACHE = {}
 
 CATEGORY_QUERIES = {
-    "trending": "top trending viral songs bollywood 2026 audio",
-    "romantic": "best romantic love songs arijit singh bollywood audio",
-    "party": "best party dance club dj hits bollywood punjabi audio",
-    "chill": "lofi chill aesthetic acoustic songs hindi english audio",
-    "workout": "high energy gym workout motivation songs audio",
-    "sad": "sad emotional heartbroken songs arijit b praak audio"
+    "trending": "Top Trending Bollywood 2026",
+    "romantic": "Best Romantic Songs Arijit Singh",
+    "party": "Best Party Dance Hits Punjabi",
+    "chill": "Lo-Fi Aesthetic Acoustic Songs Hindi",
+    "workout": "High Energy Workout Motivation Hits",
+    "sad": "Sad Emotional Heartbreak Songs"
 }
+
+def decrypt_saavn_url(encrypted_url: str) -> str:
+    try:
+        key = b'38346591'
+        enc = base64.b64decode(encrypted_url.strip())
+        cipher = DES.new(key, DES.MODE_ECB)
+        decrypted = cipher.decrypt(enc)
+        pad = decrypted[-1]
+        url = decrypted[:-pad].decode('utf-8')
+        # Upgrade to 320kbps MP4/AAC stream
+        return url.replace('_96.mp4', '_320.mp4')
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        return ""
 
 def get_search_suggestions(query: str) -> List[str]:
     query = query.strip()
     if not query or len(query) < 2:
         return []
     
-    url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={urllib.parse.quote(query)}"
+    url = f"https://www.jiosaavn.com/api.php?__call=autocomplete.get&_format=json&_marker=0&cc=in&includeMetaTags=1&query={urllib.parse.quote(query)}"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        r = requests.get(url, headers=headers, timeout=3)
+        if r.status_code == 200:
+            data = r.json()
+            songs = data.get("songs", {}).get("data", [])
+            suggestions = []
+            for s in songs:
+                title = s.get("title", "").replace("&quot;", '"').replace("&amp;", "&")
+                if title and title not in suggestions:
+                    suggestions.append(title)
+                if len(suggestions) >= 8:
+                    break
+            if suggestions:
+                return suggestions
+    except Exception as e:
+        print(f"Suggestion error: {e}")
+
+    # Fallback to Google suggest
+    try:
+        gurl = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={urllib.parse.quote(query)}"
+        req = urllib.request.Request(gurl, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=3) as res:
             data = json.loads(res.read().decode('utf-8'))
             suggestions = data[1] if len(data) > 1 else []
-            clean_suggestions = []
-            for s in suggestions:
-                s_clean = s.strip()
-                if s_clean and s_clean not in clean_suggestions:
-                    clean_suggestions.append(s_clean)
-                if len(clean_suggestions) >= 8:
-                    break
-            return clean_suggestions
-    except Exception as e:
-        print(f"Suggestion error: {e}")
+            return [s.strip() for s in suggestions if s.strip()][:8]
+    except Exception:
         return []
 
 def search_full_songs(query: str, limit: int = 30) -> List[Dict[str, Any]]:
@@ -56,65 +84,77 @@ def search_full_songs(query: str, limit: int = 30) -> List[Dict[str, Any]]:
     if not query:
         return []
 
-    search_term = f"ytsearch{limit}:{query} audio"
-    
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': True,
-        'noplaylist': True,
-    }
-
-    results = []
-    seen_ids = set()
+    # Primary: Fast JioSaavn 320kbps catalog (No cloud blocks)
+    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n={limit}&q={urllib.parse.quote(query)}"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            data = ydl.extract_info(search_term, download=False)
-            entries = data.get('entries', [])
-            for entry in entries:
-                if not entry:
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            results_raw = data.get("results", [])
+            results = []
+            seen_ids = set()
+            for item in results_raw:
+                sid = item.get("id") or item.get("perma_url")
+                if not sid or sid in seen_ids:
                     continue
-                vid_id = entry.get('id')
-                if not vid_id or vid_id in seen_ids:
-                    continue
-                seen_ids.add(vid_id)
+                seen_ids.add(sid)
 
-                title = entry.get('title', 'Unknown Track')
-                clean_title = (
-                    title.replace("(Official Audio)", "")
-                         .replace("(Official Video)", "")
-                         .replace("[Official Audio]", "")
-                         .replace("(Full Song)", "")
-                         .replace("[Full Song]", "")
-                         .replace("| Full Audio |", "")
-                         .strip()
-                )
-                uploader = entry.get('uploader') or entry.get('channel') or 'Artist'
-                duration = entry.get('duration') or 210
+                enc = item.get("encrypted_media_url")
+                direct_url = decrypt_saavn_url(enc) if enc else item.get("media_preview_url", "")
                 
-                thumbnails = entry.get('thumbnails', [])
-                thumbnail = thumbnails[-1].get('url') if thumbnails else f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
+                title = (
+                    item.get("song", "Unknown Track")
+                    .replace("&quot;", '"')
+                    .replace("&amp;", "&")
+                    .replace("&#039;", "'")
+                )
+                artist = (
+                    item.get("singers") or item.get("primary_artists") or "Artist"
+                ).replace("&quot;", '"').replace("&amp;", "&").replace("&#039;", "'")
 
-                results.append({
-                    "id": vid_id,
-                    "title": clean_title,
-                    "artist": uploader,
+                thumb = (item.get("image") or "").replace("150x150", "500x500").replace("50x50", "500x500")
+                if not thumb:
+                    thumb = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500"
+
+                duration = int(item.get("duration", 210))
+
+                song_obj = {
+                    "id": str(sid),
+                    "title": title,
+                    "artist": artist,
                     "duration": duration,
-                    "thumbnail": thumbnail,
-                    "audio_url": f"/api/stream-audio/{vid_id}",
+                    "thumbnail": thumb,
+                    "audio_url": direct_url or f"/api/stream-audio/{sid}",
                     "is_full_song": True
-                })
-    except Exception as e:
-        print(f"Search error: {e}")
+                }
 
-    return results
+                if direct_url:
+                    _STREAM_CACHE[str(sid)] = {
+                        "success": True,
+                        "id": str(sid),
+                        "title": title,
+                        "artist": artist,
+                        "thumbnail": thumb,
+                        "duration": duration,
+                        "audio_url": direct_url
+                    }
+
+                results.append(song_obj)
+
+            if results:
+                return results
+    except Exception as e:
+        print(f"Saavn search error: {e}")
+
+    return []
 
 def get_category_songs(category_name: str, limit: int = 30) -> List[Dict[str, Any]]:
     cat_key = category_name.strip().lower()
-    if cat_key in _CATEGORY_CACHE and len(_CATEGORY_CACHE[cat_key]) >= 15:
+    if cat_key in _CATEGORY_CACHE and len(_CATEGORY_CACHE[cat_key]) >= 10:
         return _CATEGORY_CACHE[cat_key]
 
-    query = CATEGORY_QUERIES.get(cat_key, f"{category_name} top hits songs audio")
+    query = CATEGORY_QUERIES.get(cat_key, f"{category_name} songs")
     songs = search_full_songs(query, limit=limit)
     if songs:
         _CATEGORY_CACHE[cat_key] = songs
@@ -124,50 +164,54 @@ def get_full_song_stream(video_id: str) -> Dict[str, Any]:
     if not video_id:
         return {"success": False, "error": "Empty video ID"}
 
-    if video_id in _STREAM_CACHE:
-        return _STREAM_CACHE[video_id]
+    sid = str(video_id).strip()
 
-    target_target = video_id
-    if not target_target.startswith("http"):
-        target_target = f"https://www.youtube.com/watch?v={video_id}"
+    if sid in _STREAM_CACHE:
+        return _STREAM_CACHE[sid]
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,
-        'no_warnings': True,
-        'noplaylist': True,
-        'ffmpeg_location': FFMPEG_EXE,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-    }
-
+    # Search Saavn by song ID or query
+    url = f"https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0&_format=json&pids={urllib.parse.quote(sid)}"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(target_target, download=False)
-            audio_url = info.get('url')
-            title = info.get('title', 'Full Song')
-            uploader = info.get('uploader', 'Artist')
-            thumbnail = info.get('thumbnail', f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg")
-            duration = info.get('duration', 180)
-
-            if not audio_url:
-                raise Exception("yt_dlp returned empty audio URL")
-
-            result = {
-                "success": True,
-                "id": video_id,
-                "title": title,
-                "artist": uploader,
-                "thumbnail": thumbnail,
-                "duration": duration,
-                "audio_url": audio_url
-            }
-            _STREAM_CACHE[video_id] = result
-            return result
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            song_data = data.get(sid) or (list(data.values())[0] if data else None)
+            if song_data and isinstance(song_data, dict):
+                enc = song_data.get("encrypted_media_url")
+                direct_url = decrypt_saavn_url(enc) if enc else song_data.get("media_preview_url", "")
+                if direct_url:
+                    res = {
+                        "success": True,
+                        "id": sid,
+                        "title": song_data.get("song", "Song"),
+                        "artist": song_data.get("singers") or song_data.get("primary_artists") or "Artist",
+                        "thumbnail": (song_data.get("image") or "").replace("150x150", "500x500"),
+                        "duration": int(song_data.get("duration", 200)),
+                        "audio_url": direct_url
+                    }
+                    _STREAM_CACHE[sid] = res
+                    return res
     except Exception as e:
-        print(f"Error extracting stream for {video_id}: {e}")
-        return {
-            "success": False,
-            "error": f"Failed to get audio stream: {str(e)}"
+        print(f"Saavn song.getDetails error for {sid}: {e}")
+
+    # If sid is a search title
+    search_res = search_full_songs(sid, limit=1)
+    if search_res and search_res[0].get("audio_url") and search_res[0]["audio_url"].startswith("http"):
+        s0 = search_res[0]
+        res = {
+            "success": True,
+            "id": sid,
+            "title": s0.get("title"),
+            "artist": s0.get("artist"),
+            "thumbnail": s0.get("thumbnail"),
+            "duration": s0.get("duration", 200),
+            "audio_url": s0["audio_url"]
         }
+        _STREAM_CACHE[sid] = res
+        return res
+
+    return {
+        "success": False,
+        "error": f"Audio stream not found for {sid}"
+    }
