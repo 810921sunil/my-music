@@ -131,7 +131,12 @@ def stream_audio(video_id: str, request: Request):
     all_trending = get_trending_songs()
     found_local = next((s for s in all_trending if s["id"] == video_id), None)
     
-    if found_local and found_local.get("audio_url"):
+    if found_local and found_local.get("youtube_id"):
+        real_vid = found_local["youtube_id"]
+        stream_info = get_full_song_stream(real_vid)
+        if stream_info.get("success") and stream_info.get("audio_url"):
+            target_url = stream_info["audio_url"]
+    elif found_local and found_local.get("audio_url") and found_local["audio_url"].startswith("http"):
         target_url = found_local["audio_url"]
     else:
         stream_info = get_full_song_stream(video_id)
