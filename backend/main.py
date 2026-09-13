@@ -373,11 +373,12 @@ async def room_websocket(websocket: WebSocket, room_code: str):
                         "status": st
                     }, exclude_client_id=client_id)
 
-            elif event == "CHAT_MSG":
-                text = payload.get("text", "").strip()
+            elif event in ("CHAT_MSG", "CHAT"):
+                text = (payload.get("text") or payload.get("message") or "").strip()
                 if text:
+                    sender = payload.get("sender_name") or client_name
                     msg_obj = {
-                        "sender": client_name,
+                        "sender": sender,
                         "is_host": sender_is_host,
                         "text": text[:200],
                         "time": time.strftime("%H:%M")
@@ -387,13 +388,27 @@ async def room_websocket(websocket: WebSocket, room_code: str):
                         room.chat_messages.pop(0)
                     await room.broadcast("CHAT_BROADCAST", msg_obj)
 
-            elif event == "REACTION":
-                reaction = payload.get("reaction")
+            elif event in ("REACTION", "EMOJI"):
+                reaction = payload.get("reaction") or payload.get("emoji")
                 if reaction:
+                    sender = payload.get("sender_name") or client_name
                     await room.broadcast("REACTION_BROADCAST", {
-                        "sender": client_name,
+                        "sender": sender,
                         "reaction": reaction
                     })
+
+            elif event in ("LEAVE_ROOM", "LEAVE"):
+                new_host = room.remove_member(client_id)
+                if len(room.members) == 0:
+                    room_manager.remove_room(room.code)
+                else:
+                    await room.broadcast("MEMBER_LEFT", {
+                        "member_id": client_id,
+                        "member_count": len(room.members),
+                        "new_host_id": new_host,
+                        "new_host_name": room.host_name if new_host else None
+                    })
+                break
 
             elif event == "KICK_MEMBER":
                 # Only Host can kick
@@ -419,15 +434,12 @@ async def room_websocket(websocket: WebSocket, room_code: str):
         print("WS exception:", e)
     finally:
         if client_id:
-            new_host = room.remove_member(client_id)
-            if len(room.members) == 0:
-                room_manager.remove_room(room.code)
-            else:
-                await room.broadcast("MEMBER_LEFT", {
+            room.remove_connection(client_id)
+            if client_id in room.members:
+                room.members[client_id]["status"] = "offline"
+                await room.broadcast("MEMBER_STATUS", {
                     "member_id": client_id,
-                    "member_count": len(room.members),
-                    "new_host_id": new_host,
-                    "new_host_name": room.host_name if new_host else None
+                    "status": "offline"
                 })
 
 # Serve Frontend static assets

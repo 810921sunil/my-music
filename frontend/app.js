@@ -1282,10 +1282,22 @@ async function playSong(song, index, playlist) {
     setPlayerMetadata(song);
 
     // Primary audio stream URL via backend proxy (same origin, Range seek support, no CORS)
-    let audioSrc = song.audio_url;
-    if (!audioSrc && song.id) {
-        audioSrc = `/api/stream-audio/${song.id}`;
-        song.audio_url = audioSrc;
+    let audioSrc = (!song.audio_url || song.audio_url.includes('soundhelix') || !song.audio_url.startsWith('http')) 
+        ? (`/api/stream-audio/${song.id}`) 
+        : song.audio_url;
+    song.audio_url = audioSrc;
+
+    // Broadcast to room members IMMEDIATELY if Host!
+    if (state.room && state.room.code && state.room.isHost && !state.room.isSyncing) {
+        state.room.currentSong = song;
+        broadcastRoomEvent({
+            action: 'CHANGE_SONG',
+            event: 'CHANGE_SONG',
+            song: song,
+            position: 0,
+            is_playing: true
+        });
+        updateRoomNowPlayingUI();
     }
 
     showToast(`Loading: ${song.title}...`, 2000);
@@ -1296,19 +1308,10 @@ async function playSong(song, index, playlist) {
         state.isPlaying = true;
         updatePlayIcons();
         showToast(`▶ Now Playing: ${song.title}`);
-
-        // Broadcast to room members if Host
-        if (state.room && state.room.code && state.room.isHost && !state.room.isSyncing) {
-            broadcastRoomEvent({
-                action: 'CHANGE_SONG',
-                song: song,
-                position: 0,
-                is_playing: true
-            });
-        }
         updateRoomNowPlayingUI();
     }).catch(err => {
         console.warn('Playback caught:', err);
+        updateRoomNowPlayingUI();
         // Fallback: If proxy stream took time, attempt direct song-stream
         if (song.id && !song._retriedDirect) {
             song._retriedDirect = true;
@@ -1687,22 +1690,32 @@ const bottomRoomStatus = document.getElementById('bottom-room-status');
 
 // Helper: Broadcast event over Room WebSocket
 function broadcastRoomEvent(eventOrObj, payload = {}) {
-    if (state.room && state.room.ws && state.room.ws.readyState === WebSocket.OPEN) {
-        if (typeof eventOrObj === 'object') {
-            const eventName = eventOrObj.event || eventOrObj.action;
-            const dataObj = { ...eventOrObj };
-            delete dataObj.event;
-            delete dataObj.action;
-            state.room.ws.send(JSON.stringify({
-                event: eventName,
-                data: dataObj
-            }));
-        } else {
-            state.room.ws.send(JSON.stringify({
-                event: eventOrObj,
-                data: payload
-            }));
-        }
+    if (!state.room || !state.room.code) return;
+
+    let eventName = '';
+    let dataObj = {};
+    if (typeof eventOrObj === 'object') {
+        eventName = eventOrObj.event || eventOrObj.action;
+        dataObj = { ...eventOrObj };
+        delete dataObj.event;
+        delete dataObj.action;
+    } else {
+        eventName = eventOrObj;
+        dataObj = { ...payload };
+    }
+
+    const jsonMsg = JSON.stringify({ event: eventName, data: dataObj });
+
+    if (state.room.ws && state.room.ws.readyState === WebSocket.OPEN) {
+        state.room.ws.send(jsonMsg);
+    } else {
+        console.warn('[Music Room] WebSocket not connected (state: ' + (state.room.ws ? state.room.ws.readyState : 'none') + '). Reconnecting...');
+        connectRoomWebSocket(state.room.code, state.room.clientId, state.room.name);
+        setTimeout(() => {
+            if (state.room.ws && state.room.ws.readyState === WebSocket.OPEN) {
+                state.room.ws.send(jsonMsg);
+            }
+        }, 1200);
     }
 }
 
@@ -2293,12 +2306,11 @@ if (roomChatForm) {
         if (!text) return;
 
         broadcastRoomEvent({
-            action: 'CHAT',
+            event: 'CHAT_MSG',
+            action: 'CHAT_MSG',
             text: text,
             sender_name: state.room.name
         });
-
-        appendChatMessage(state.room.name, text, true, false);
         roomChatInput.value = '';
     });
 }
@@ -2309,11 +2321,12 @@ document.querySelectorAll('.reaction-pill').forEach(btn => {
         const emoji = btn.getAttribute('data-emoji');
         if (emoji && state.room.code) {
             broadcastRoomEvent({
+                event: 'REACTION',
                 action: 'REACTION',
+                reaction: emoji,
                 emoji: emoji,
                 sender_name: state.room.name
             });
-            appendChatMessage(state.room.name, `reacted with ${emoji}`, true, true);
             triggerFloatingEmoji(emoji);
         }
     });
@@ -2368,6 +2381,11 @@ if (roomShareLinkBtn) {
 }
 
 function leaveRoom(notifyServer = true) {
+    if (notifyServer && state.room.ws && state.room.ws.readyState === WebSocket.OPEN) {
+        try {
+            state.room.ws.send(JSON.stringify({ event: 'LEAVE_ROOM', data: {} }));
+        } catch (e) {}
+    }
     if (state.room.ws) {
         state.room.ws.close();
         state.room.ws = null;
