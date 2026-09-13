@@ -121,16 +121,27 @@ def song_stream(video_id: str):
 
 @app.get("/api/stream-audio/{video_id}")
 def stream_audio(video_id: str, request: Request):
-    # Check if curated local/soundhelix song
+    target_url = None
+
     all_trending = get_trending_songs()
     found_local = next((s for s in all_trending if s["id"] == video_id), None)
-    if found_local and found_local.get("audio_url") and found_local["audio_url"].startswith("http"):
-        target_url = found_local["audio_url"]
+    
+    if found_local:
+        # Search real stream for curated song
+        query = found_local.get("search_query") or found_local.get("title")
+        search_res = search_full_songs(query, limit=1)
+        if search_res:
+            real_vid = search_res[0]["id"]
+            stream_info = get_full_song_stream(real_vid)
+            if stream_info.get("success") and stream_info.get("audio_url"):
+                target_url = stream_info["audio_url"]
     else:
         stream_info = get_full_song_stream(video_id)
-        if not stream_info.get("success") or not stream_info.get("audio_url"):
-            raise HTTPException(status_code=404, detail="Audio stream not found")
-        target_url = stream_info["audio_url"]
+        if stream_info.get("success") and stream_info.get("audio_url"):
+            target_url = stream_info["audio_url"]
+
+    if not target_url:
+        raise HTTPException(status_code=404, detail="Audio stream not found")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -140,7 +151,7 @@ def stream_audio(video_id: str, request: Request):
         headers["Range"] = range_header
 
     try:
-        req = requests.get(target_url, headers=headers, stream=True, timeout=20)
+        req = requests.get(target_url, headers=headers, stream=True, timeout=25)
         
         def iter_file():
             for chunk in req.iter_content(chunk_size=64 * 1024):
@@ -149,7 +160,7 @@ def stream_audio(video_id: str, request: Request):
 
         resp_headers = {
             "Accept-Ranges": "bytes",
-            "Content-Type": req.headers.get("Content-Type", "audio/webm"),
+            "Content-Type": req.headers.get("Content-Type", "audio/mpeg"),
         }
         if "Content-Length" in req.headers:
             resp_headers["Content-Length"] = req.headers["Content-Length"]

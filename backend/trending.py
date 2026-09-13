@@ -10,7 +10,7 @@ TRENDING_SONGS = [
         "duration": 261,
         "duration_str": "4:21",
         "thumbnail": "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        "audio_url": "/api/stream-audio/song_apna_bana_le",
         "category": "Romantic",
         "views": "12.4M plays"
     },
@@ -23,7 +23,7 @@ TRENDING_SONGS = [
         "duration": 268,
         "duration_str": "4:28",
         "thumbnail": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        "audio_url": "/api/stream-audio/song_kesariya",
         "category": "Romantic",
         "views": "28.1M plays"
     },
@@ -36,7 +36,7 @@ TRENDING_SONGS = [
         "duration": 262,
         "duration_str": "4:22",
         "thumbnail": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        "audio_url": "/api/stream-audio/song_tum_hi_ho",
         "category": "Sad",
         "views": "35.6M plays"
     },
@@ -49,7 +49,7 @@ TRENDING_SONGS = [
         "duration": 212,
         "duration_str": "3:32",
         "thumbnail": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+        "audio_url": "/api/stream-audio/song_faded",
         "category": "Chill",
         "views": "45.2M plays"
     },
@@ -62,7 +62,7 @@ TRENDING_SONGS = [
         "duration": 233,
         "duration_str": "3:53",
         "thumbnail": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+        "audio_url": "/api/stream-audio/song_shape_of_you",
         "category": "Party",
         "views": "58.9M plays"
     },
@@ -75,7 +75,7 @@ TRENDING_SONGS = [
         "duration": 289,
         "duration_str": "4:49",
         "thumbnail": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+        "audio_url": "/api/stream-audio/song_channa_mereya",
         "category": "Sad",
         "views": "19.3M plays"
     },
@@ -88,7 +88,7 @@ TRENDING_SONGS = [
         "duration": 230,
         "duration_str": "3:50",
         "thumbnail": "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        "audio_url": "/api/stream-audio/song_starboy",
         "category": "Party",
         "views": "33.5M plays"
     },
@@ -101,7 +101,7 @@ TRENDING_SONGS = [
         "duration": 195,
         "duration_str": "3:15",
         "thumbnail": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&q=80",
-        "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        "audio_url": "/api/stream-audio/song_lover",
         "category": "Romantic",
         "views": "24.1M plays"
     }
