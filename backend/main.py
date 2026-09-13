@@ -123,28 +123,22 @@ def song_stream(video_id: str):
 def stream_audio(video_id: str, request: Request):
     target_url = None
 
+    # Check if cached audio file in CACHE_DIR
+    possible_file = os.path.join(CACHE_DIR, f"{video_id}.mp3")
+    if os.path.exists(possible_file):
+        return FileResponse(possible_file, media_type="audio/mpeg")
+
     all_trending = get_trending_songs()
     found_local = next((s for s in all_trending if s["id"] == video_id), None)
     
-    if found_local and found_local.get("youtube_id"):
-        real_vid = found_local["youtube_id"]
-        stream_info = get_full_song_stream(real_vid)
-        if stream_info.get("success") and stream_info.get("audio_url"):
-            target_url = stream_info["audio_url"]
-    elif found_local:
-        query = found_local.get("search_query") or found_local.get("title")
-        search_res = search_full_songs(query, limit=1)
-        if search_res:
-            real_vid = search_res[0]["id"]
-            stream_info = get_full_song_stream(real_vid)
-            if stream_info.get("success") and stream_info.get("audio_url"):
-                target_url = stream_info["audio_url"]
+    if found_local and found_local.get("audio_url"):
+        target_url = found_local["audio_url"]
     else:
         stream_info = get_full_song_stream(video_id)
         if stream_info.get("success") and stream_info.get("audio_url"):
             target_url = stream_info["audio_url"]
 
-    if not target_url:
+    if not target_url or not target_url.startswith("http"):
         raise HTTPException(status_code=404, detail="Audio stream not found")
 
     headers = {
