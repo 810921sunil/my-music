@@ -121,25 +121,38 @@ def get_category_songs(category_name: str, limit: int = 30) -> List[Dict[str, An
     return songs
 
 def get_full_song_stream(video_id: str) -> Dict[str, Any]:
+    if not video_id:
+        return {"success": False, "error": "Empty video ID"}
+
     if video_id in _STREAM_CACHE:
         return _STREAM_CACHE[video_id]
+
+    target_target = video_id
+    if not target_target.startswith("http"):
+        target_target = f"https://www.youtube.com/watch?v={video_id}"
 
     ydl_opts = {
         'format': 'bestaudio/best',
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        'ffmpeg_location': FFMPEG_EXE
+        'ffmpeg_location': FFMPEG_EXE,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_id, download=False)
+            info = ydl.extract_info(target_target, download=False)
             audio_url = info.get('url')
             title = info.get('title', 'Full Song')
             uploader = info.get('uploader', 'Artist')
             thumbnail = info.get('thumbnail', f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg")
             duration = info.get('duration', 180)
+
+            if not audio_url:
+                raise Exception("yt_dlp returned empty audio URL")
 
             result = {
                 "success": True,
@@ -153,6 +166,7 @@ def get_full_song_stream(video_id: str) -> Dict[str, Any]:
             _STREAM_CACHE[video_id] = result
             return result
     except Exception as e:
+        print(f"Error extracting stream for {video_id}: {e}")
         return {
             "success": False,
             "error": f"Failed to get audio stream: {str(e)}"
