@@ -281,11 +281,20 @@ async def room_websocket(websocket: WebSocket, room_code: str):
             payload = data.get("data", {})
             now = time.time()
             now_ms = int(now * 1000)
-
-            # Check if this sender is host
             sender_is_host = (client_id == room.host_id)
 
-            if event == "PLAY":
+            if event == "PING":
+                client_t = payload.get("client_t")
+                await websocket.send_json({
+                    "event": "PONG",
+                    "server_time": now_ms,
+                    "data": {
+                        "client_t": client_t,
+                        "server_time": now_ms
+                    }
+                })
+
+            elif event == "PLAY":
                 pos = float(payload.get("position", room.get_current_position()))
                 room.is_playing = True
                 room.position = pos
@@ -296,7 +305,7 @@ async def room_websocket(websocket: WebSocket, room_code: str):
                     "song": room.current_song,
                     "position": round(pos, 2),
                     "server_time": now_ms
-                })
+                }, exclude_client_id=client_id)
 
             elif event == "PAUSE":
                 pos = float(payload.get("position", room.get_current_position()))
@@ -306,7 +315,7 @@ async def room_websocket(websocket: WebSocket, room_code: str):
                 await room.broadcast("PAUSE_SYNC", {
                     "position": round(pos, 2),
                     "server_time": now_ms
-                })
+                }, exclude_client_id=client_id)
 
             elif event == "SEEK":
                 pos = float(payload.get("position", 0.0))
@@ -316,7 +325,7 @@ async def room_websocket(websocket: WebSocket, room_code: str):
                     "position": round(pos, 2),
                     "is_playing": room.is_playing,
                     "server_time": now_ms
-                })
+                }, exclude_client_id=client_id)
 
             elif event == "CHANGE_SONG":
                 new_song = payload.get("song")
@@ -330,7 +339,7 @@ async def room_websocket(websocket: WebSocket, room_code: str):
                         "position": 0.0,
                         "is_playing": True,
                         "server_time": now_ms
-                    })
+                    }, exclude_client_id=client_id)
 
             elif event == "NEXT":
                 if room.queue:

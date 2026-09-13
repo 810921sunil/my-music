@@ -230,11 +230,11 @@ class RoomManager:
         return result
 
     async def periodic_sync_loop(self):
-        """Background heartbeat keeping playing rooms perfectly synchronized."""
+        """Background heartbeat keeping playing rooms perfectly synchronized with sub-second precision."""
         save_counter = 0
         while True:
             try:
-                await asyncio.sleep(4.0)
+                await asyncio.sleep(1.5)
                 now_ms = int(time.time() * 1000)
                 for room in list(self.rooms.values()):
                     if room.is_playing and room.connections:
@@ -242,9 +242,9 @@ class RoomManager:
                             "position": round(room.get_current_position(), 2),
                             "is_playing": True,
                             "server_time": now_ms
-                        })
+                        }, exclude_client_id=room.host_id)
                 save_counter += 1
-                if save_counter >= 15: # Save state every ~60 seconds
+                if save_counter >= 30: # Save state every ~45 seconds
                     save_counter = 0
                     self.save_to_disk()
             except Exception as e:

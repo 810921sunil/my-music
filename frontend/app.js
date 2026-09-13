@@ -1824,6 +1824,98 @@ if (joinRoomBtn) {
     });
 }
 
+// NTP Clock Offset & Latency Synchronization for Music Room
+let roomClockOffset = 0; // ms difference: serverTime - clientLocalTime
+let roomRtt = 40; // ms round-trip time
+let roomPingTimer = null;
+
+function sendRoomPing() {
+    if (state.room.ws && state.room.ws.readyState === WebSocket.OPEN) {
+        state.room.ws.send(JSON.stringify({
+            event: 'PING',
+            data: { client_t: performance.now() }
+        }));
+    }
+}
+
+function startRoomPingHeartbeat() {
+    if (roomPingTimer) clearInterval(roomPingTimer);
+    sendRoomPing();
+    roomPingTimer = setInterval(sendRoomPing, 8000);
+}
+
+function stopRoomPingHeartbeat() {
+    if (roomPingTimer) {
+        clearInterval(roomPingTimer);
+        roomPingTimer = null;
+    }
+}
+
+function getAccuratePlaybackPosition(reportedPos, isPlaying, serverTime) {
+    if (!isPlaying) return reportedPos || 0;
+    const nowServerTime = Date.now() + roomClockOffset;
+    let elapsedSec = (nowServerTime - (serverTime || nowServerTime)) / 1000;
+    // Bound elapsed time to sane limits (0 to 2 seconds max)
+    if (elapsedSec < 0 || elapsedSec > 2.5) {
+        elapsedSec = (roomRtt / 2000);
+    }
+    return Math.max(0, (reportedPos || 0) + elapsedSec);
+}
+
+function alignPlaybackDrift(targetPos, isPlaying) {
+    if (state.room.isHost) return; // Host is master clock
+    if (!audio.src) return;
+
+    if (isPlaying && audio.paused) {
+        audio.currentTime = targetPos;
+        state.room.isSyncing = true;
+        audio.play().then(() => {
+            hideAudioUnlockOverlay();
+            updateRoomStageActionBtn();
+        }).catch(() => {
+            showAudioUnlockOverlay();
+        }).finally(() => {
+            state.room.isSyncing = false;
+        });
+        return;
+    }
+
+    if (!isPlaying && !audio.paused) {
+        audio.currentTime = targetPos;
+        audio.pause();
+        state.isPlaying = false;
+        updatePlayIcons();
+        updateRoomVisualizer();
+        updateRoomStageActionBtn();
+        return;
+    }
+
+    if (isPlaying && !audio.paused) {
+        const drift = audio.currentTime - targetPos;
+        const absDrift = Math.abs(drift);
+
+        if (absDrift > 1.2) {
+            // Hard jump for large drift
+            audio.currentTime = targetPos;
+            audio.playbackRate = 1.0;
+        } else if (absDrift > 0.25) {
+            // Smooth rate adjustment (no audio cutting/stuttering)
+            if (drift < 0) {
+                // Behind host -> speed up slightly
+                audio.playbackRate = 1.05;
+            } else {
+                // Ahead of host -> slow down slightly
+                audio.playbackRate = 0.95;
+            }
+        } else {
+            // In perfect sync (within 250ms)
+            if (audio.playbackRate !== 1.0) {
+                audio.playbackRate = 1.0;
+            }
+        }
+    }
+}
+
 // 3. WebSocket Connection Management
 function connectRoomWebSocket(roomCode, clientId, name) {
     if (state.room.ws) {
@@ -1838,12 +1930,12 @@ function connectRoomWebSocket(roomCode, clientId, name) {
 
     ws.onopen = () => {
         console.log(`[Music Room] WebSocket connected to ${roomCode}`);
-        // Initial JOIN message handshake
         ws.send(JSON.stringify({
             event: 'JOIN',
             client_id: clientId,
             name: name
         }));
+        startRoomPingHeartbeat();
         updateBottomRoomIndicator();
     };
 
@@ -1858,6 +1950,7 @@ function connectRoomWebSocket(roomCode, clientId, name) {
 
     ws.onclose = () => {
         console.log('[Music Room] WebSocket disconnected.');
+        stopRoomPingHeartbeat();
         updateBottomRoomIndicator();
     };
 
@@ -1871,6 +1964,16 @@ function handleRoomWsMessage(msg) {
     const event = msg.event || msg.type;
     const payload = msg.data || msg;
     const serverTime = msg.server_time || Date.now();
+
+    if (event === 'PONG') {
+        const t0 = payload.client_t || 0;
+        const t1 = performance.now();
+        const rtt = Math.max(5, t1 - t0);
+        roomRtt = rtt;
+        const serverAtArrival = payload.server_time + (rtt / 2);
+        roomClockOffset = serverAtArrival - Date.now();
+        return;
+    }
 
     if (event === 'ROOM_STATE') {
         state.room.hostId = payload.host_id;
@@ -1894,73 +1997,43 @@ function handleRoomWsMessage(msg) {
             updateRoomNowPlayingUI();
         }
     } else if (event === 'SONG_CHANGED') {
-        syncSongPlayback(payload.song, payload.position, payload.is_playing, serverTime);
+        if (!state.room.isHost) {
+            syncSongPlayback(payload.song, payload.position, payload.is_playing, serverTime);
+        }
     } else if (event === 'PLAY_SYNC') {
         state.room.isPlaying = true;
-        const songToPlay = payload.song || state.room.currentSong || state.currentSong;
-        if (songToPlay && (!state.currentSong || String(state.currentSong.id) !== String(songToPlay.id) || !audio.src)) {
-            syncSongPlayback(songToPlay, payload.position, true, serverTime);
-        } else {
-            const latency = (Date.now() - serverTime) / 1000;
-            const targetPos = Math.max(0, (payload.position || 0) + latency);
-
-            if (Math.abs(audio.currentTime - targetPos) > 0.45) {
-                audio.currentTime = targetPos;
+        if (!state.room.isHost) {
+            const songToPlay = payload.song || state.room.currentSong || state.currentSong;
+            if (songToPlay && (!state.currentSong || String(state.currentSong.id) !== String(songToPlay.id) || !audio.src)) {
+                syncSongPlayback(songToPlay, payload.position, true, serverTime);
+            } else {
+                const targetPos = getAccuratePlaybackPosition(payload.position, true, serverTime);
+                alignPlaybackDrift(targetPos, true);
+                state.isPlaying = true;
+                updatePlayIcons();
+                updateRoomVisualizer();
+                updateRoomStageActionBtn();
             }
-
-            state.room.isSyncing = true;
-            audio.play().then(() => {
-                hideAudioUnlockOverlay();
-                updateRoomStageActionBtn();
-            }).catch(e => {
-                console.warn('Play sync autoplay blocked:', e);
-                showAudioUnlockOverlay();
-                updateRoomStageActionBtn();
-            }).finally(() => {
-                state.room.isSyncing = false;
-            });
-
-            state.isPlaying = true;
-            updatePlayIcons();
-            updateRoomVisualizer();
-            updateRoomStageActionBtn();
         }
     } else if (event === 'PAUSE_SYNC') {
         state.room.isPlaying = false;
-        state.room.isSyncing = true;
-        if (payload.position != null) {
-            audio.currentTime = payload.position;
+        if (!state.room.isHost) {
+            const targetPos = payload.position != null ? payload.position : audio.currentTime;
+            alignPlaybackDrift(targetPos, false);
         }
-        audio.pause();
-        state.isPlaying = false;
-        updatePlayIcons();
-        updateRoomVisualizer();
-        updateRoomStageActionBtn();
-        state.room.isSyncing = false;
     } else if (event === 'SEEK_SYNC') {
-        const isPlaying = !audio.paused;
-        const latency = (Date.now() - serverTime) / 1000;
-        const targetPos = Math.max(0, (payload.position || 0) + (isPlaying ? latency : 0));
-        state.room.isSyncing = true;
-        audio.currentTime = targetPos;
-        state.room.isSyncing = false;
+        if (!state.room.isHost) {
+            const isPlaying = payload.is_playing !== undefined ? payload.is_playing : !audio.paused;
+            const targetPos = getAccuratePlaybackPosition(payload.position, isPlaying, serverTime);
+            audio.currentTime = targetPos;
+            audio.playbackRate = 1.0;
+        }
     } else if (event === 'PERIODIC_SYNC') {
-        // Auto clock drift correction for members
-        if (!state.room.isHost && audio.duration) {
+        // High-precision clock drift correction for room members
+        if (!state.room.isHost && audio.src) {
             const isPlaying = payload.is_playing;
-            const latency = (Date.now() - serverTime) / 1000;
-            const targetPos = (payload.position || 0) + (isPlaying ? latency : 0);
-
-            if (isPlaying && audio.paused) {
-                audio.currentTime = targetPos;
-                state.room.isSyncing = true;
-                audio.play().catch(() => {}).finally(() => { state.room.isSyncing = false; });
-            } else if (!isPlaying && !audio.paused) {
-                audio.pause();
-            } else if (isPlaying && Math.abs(audio.currentTime - targetPos) > 0.55) {
-                // Correct drift smoothly
-                audio.currentTime = targetPos;
-            }
+            const targetPos = getAccuratePlaybackPosition(payload.position, isPlaying, serverTime);
+            alignPlaybackDrift(targetPos, isPlaying);
         }
     } else if (event === 'MEMBER_JOINED') {
         if (payload.member) {
@@ -2025,8 +2098,7 @@ function syncSongPlayback(song, position, isPlaying, serverTime) {
         : song.audio_url;
     song.audio_url = audioSrc;
 
-    const latency = (Date.now() - (serverTime || Date.now())) / 1000;
-    const targetPos = Math.max(0, (position || 0) + (isPlaying ? latency : 0));
+    const targetPos = getAccuratePlaybackPosition(position, isPlaying, serverTime);
 
     state.room.isSyncing = true;
 
@@ -2035,7 +2107,8 @@ function syncSongPlayback(song, position, isPlaying, serverTime) {
     }
 
     const applyPlayback = () => {
-        if (targetPos > 0 && Math.abs(audio.currentTime - targetPos) > 0.5) {
+        audio.playbackRate = 1.0;
+        if (targetPos > 0 && Math.abs(audio.currentTime - targetPos) > 0.4) {
             try { audio.currentTime = targetPos; } catch(e) {}
         }
         if (isPlaying) {
