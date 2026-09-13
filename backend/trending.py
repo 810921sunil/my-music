@@ -3,6 +3,7 @@
 TRENDING_SONGS = [
     {
         "id": "song_apna_bana_le",
+        "youtube_id": "u2NAuswnTKs",
         "search_query": "Apna Bana Le Bhediya Arijit Singh",
         "title": "Apna Bana Le",
         "artist": "Arijit Singh",
@@ -16,6 +17,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_kesariya",
+        "youtube_id": "6RdS6wLu7RY",
         "search_query": "Kesariya Brahmastra Arijit Singh",
         "title": "Kesariya",
         "artist": "Arijit Singh",
@@ -29,6 +31,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_tum_hi_ho",
+        "youtube_id": "Umqb9KENgmk",
         "search_query": "Tum Hi Ho Aashiqui 2 Arijit Singh",
         "title": "Tum Hi Ho",
         "artist": "Arijit Singh",
@@ -42,6 +45,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_faded",
+        "youtube_id": "psn_rs_a5O0",
         "search_query": "Faded Alan Walker",
         "title": "Faded",
         "artist": "Alan Walker",
@@ -55,6 +59,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_shape_of_you",
+        "youtube_id": "_dK2tDK9grQ",
         "search_query": "Shape of You Ed Sheeran",
         "title": "Shape of You",
         "artist": "Ed Sheeran",
@@ -68,6 +73,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_channa_mereya",
+        "youtube_id": "bzSTpdcs-EI",
         "search_query": "Channa Mereya Ae Dil Hai Mushkil Arijit Singh",
         "title": "Channa Mereya",
         "artist": "Arijit Singh",
@@ -81,6 +87,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_starboy",
+        "youtube_id": "Rif-RTvmmss",
         "search_query": "Starboy The Weeknd",
         "title": "Starboy",
         "artist": "The Weeknd",
@@ -94,6 +101,7 @@ TRENDING_SONGS = [
     },
     {
         "id": "song_lover",
+        "youtube_id": "aoIhamvZKdQ",
         "search_query": "Lover Diljit Dosanjh",
         "title": "Lover",
         "artist": "Diljit Dosanjh",
