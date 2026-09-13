@@ -232,7 +232,7 @@ function showView(viewName, params = {}) {
         }
     });
 
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
         if (item.getAttribute('data-page') === viewName) {
             item.classList.add('active');
         } else {
@@ -272,8 +272,8 @@ function showView(viewName, params = {}) {
     }
 }
 
-// Sidebar Navigation
-document.querySelectorAll('.nav-item').forEach(item => {
+// Sidebar & Mobile Navigation Listeners
+document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         const page = item.getAttribute('data-page');
